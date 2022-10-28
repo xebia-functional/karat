@@ -15,10 +15,10 @@ object B: KPrimSig("B") {
 }
 
 fun main() {
-  val opt = options {
-    solver = A4Options.SatSolver.SAT4J
-  }
-  val solution = execute(listOf(A, B), opt) {
+  val solution = execute(
+    sigs = listOf(A, B),
+    options = { solver = A4Options.SatSolver.SAT4J }
+  ) {
     run(3, 3, 3, some(A))
   }
   println(solution.toString())

@@ -7,7 +7,7 @@ import edu.mit.csail.sdg.translator.A4Solution
 import edu.mit.csail.sdg.translator.TranslateAlloyToKodkod
 import kotlin.experimental.ExperimentalTypeInference
 
-data class Execution(val sigs: List<KPrimSig>, val options: A4Options, val reporter: A4Reporter = A4Reporter.NOP) {
+data class Execute(val sigs: List<KPrimSig>, val options: A4Options, val reporter: A4Reporter = A4Reporter.NOP) {
   fun run(`for`: Int, but: Int, seq: Int, formula: KFormula): A4Solution =
     TranslateAlloyToKodkod.execute_command(
       reporter,
@@ -28,13 +28,10 @@ data class Execution(val sigs: List<KPrimSig>, val options: A4Options, val repor
 @OptIn(ExperimentalTypeInference::class)
 fun <A> execute(
   sigs: List<KPrimSig>,
-  options: A4Options,
+  options: A4Options.() -> Unit = { },
   reporter: A4Reporter = A4Reporter.NOP,
-  @BuilderInference block: Execution.() -> A
-): A = Execution(sigs, options, reporter).run(block)
-
-fun options(block: A4Options.() -> Unit): A4Options =
-  A4Options().also(block)
+  @BuilderInference block: Execute.() -> A
+): A = Execute(sigs, A4Options().also(options), reporter).run(block)
 
 fun runCommand(`for`: Int, but: Int, seq: Int, formula: KFormula): Command =
   Command(false, `for`, but, seq, formula.expr)
