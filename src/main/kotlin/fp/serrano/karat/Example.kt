@@ -6,7 +6,7 @@ import edu.mit.csail.sdg.translator.A4Options
 // http://alloytools.org/documentation/code/ExampleUsingTheAPI.java.html
 
 object A: KPrimSig("A", Attr.ABSTRACT) {
-  val f: KField = field("f", B lone_arrow_lone B)
+  val f: KField = field("f", B `lone --# lone` B)
   val g: KField = field("g", oneOf(B))
 }
 

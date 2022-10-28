@@ -22,49 +22,49 @@ fun one(sr: KSetOrRelation): KFormula =
 
 // functions to create multiplicity constraints
 
-infix fun KSetOrRelation.any_arrow_some(other: KSetOrRelation): KMultiplicityConstraint =
+infix fun KSetOrRelation.`any --# some`(other: KSetOrRelation): KMultiplicityConstraint =
   KMultiplicityConstraint(this.expr.any_arrow_some(other.expr))
 
-infix fun KSetOrRelation.any_arrow_one(other: KSetOrRelation): KMultiplicityConstraint =
+infix fun KSetOrRelation.`any --# one`(other: KSetOrRelation): KMultiplicityConstraint =
   KMultiplicityConstraint(this.expr.any_arrow_one(other.expr))
 
-infix fun KSetOrRelation.any_arrow_lone(other: KSetOrRelation): KMultiplicityConstraint =
+infix fun KSetOrRelation.`any --# lone`(other: KSetOrRelation): KMultiplicityConstraint =
   KMultiplicityConstraint(this.expr.any_arrow_lone(other.expr))
 
-infix fun KSetOrRelation.some_arrow_any(other: KSetOrRelation): KMultiplicityConstraint =
-  KMultiplicityConstraint(this.expr.any_arrow_some(other.expr))
+infix fun KSetOrRelation.`some --# any`(other: KSetOrRelation): KMultiplicityConstraint =
+  KMultiplicityConstraint(this.expr.some_arrow_any(other.expr))
 
-infix fun KSetOrRelation.some_arrow_some(other: KSetOrRelation): KMultiplicityConstraint =
-  KMultiplicityConstraint(this.expr.any_arrow_some(other.expr))
+infix fun KSetOrRelation.`some --# some`(other: KSetOrRelation): KMultiplicityConstraint =
+  KMultiplicityConstraint(this.expr.some_arrow_some(other.expr))
 
-infix fun KSetOrRelation.some_arrow_one(other: KSetOrRelation): KMultiplicityConstraint =
-  KMultiplicityConstraint(this.expr.any_arrow_some(other.expr))
+infix fun KSetOrRelation.`some --# one`(other: KSetOrRelation): KMultiplicityConstraint =
+  KMultiplicityConstraint(this.expr.some_arrow_one(other.expr))
 
-infix fun KSetOrRelation.some_arrow_lone(other: KSetOrRelation): KMultiplicityConstraint =
+infix fun KSetOrRelation.`some --# lone`(other: KSetOrRelation): KMultiplicityConstraint =
   KMultiplicityConstraint(this.expr.some_arrow_lone(other.expr))
 
-infix fun KSetOrRelation.one_arrow_any(other: KSetOrRelation): KMultiplicityConstraint =
+infix fun KSetOrRelation.`one --# any`(other: KSetOrRelation): KMultiplicityConstraint =
   KMultiplicityConstraint(this.expr.one_arrow_any(other.expr))
 
-infix fun KSetOrRelation.one_arrow_some(other: KSetOrRelation): KMultiplicityConstraint =
+infix fun KSetOrRelation.`one --# some`(other: KSetOrRelation): KMultiplicityConstraint =
   KMultiplicityConstraint(this.expr.one_arrow_some(other.expr))
 
-infix fun KSetOrRelation.one_arrow_one(other: KSetOrRelation): KMultiplicityConstraint =
+infix fun KSetOrRelation.`one --# one`(other: KSetOrRelation): KMultiplicityConstraint =
   KMultiplicityConstraint(this.expr.one_arrow_one(other.expr))
 
-infix fun KSetOrRelation.one_arrow_lone(other: KSetOrRelation): KMultiplicityConstraint =
+infix fun KSetOrRelation.`one --# lone`(other: KSetOrRelation): KMultiplicityConstraint =
   KMultiplicityConstraint(this.expr.one_arrow_lone(other.expr))
 
-infix fun KSetOrRelation.lone_arrow_any(other: KSetOrRelation): KMultiplicityConstraint =
+infix fun KSetOrRelation.`lone --# any`(other: KSetOrRelation): KMultiplicityConstraint =
   KMultiplicityConstraint(this.expr.lone_arrow_any(other.expr))
 
-infix fun KSetOrRelation.lone_arrow_some(other: KSetOrRelation): KMultiplicityConstraint =
+infix fun KSetOrRelation.`lone --# some`(other: KSetOrRelation): KMultiplicityConstraint =
   KMultiplicityConstraint(this.expr.lone_arrow_some(other.expr))
 
-infix fun KSetOrRelation.lone_arrow_one(other: KSetOrRelation): KMultiplicityConstraint =
+infix fun KSetOrRelation.`lone --# one`(other: KSetOrRelation): KMultiplicityConstraint =
   KMultiplicityConstraint(this.expr.lone_arrow_one(other.expr))
 
-infix fun KSetOrRelation.lone_arrow_lone(other: KSetOrRelation): KMultiplicityConstraint =
+infix fun KSetOrRelation.`lone --# lone`(other: KSetOrRelation): KMultiplicityConstraint =
   KMultiplicityConstraint(this.expr.lone_arrow_lone(other.expr))
 
 fun someOf(sr: KSetOrRelation): KMultiplicityConstraint =
