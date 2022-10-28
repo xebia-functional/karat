@@ -7,7 +7,7 @@ import edu.mit.csail.sdg.translator.A4Solution
 import edu.mit.csail.sdg.translator.TranslateAlloyToKodkod
 import kotlin.experimental.ExperimentalTypeInference
 
-data class Execute(val sigs: List<KPrimSig>, val options: A4Options, val reporter: A4Reporter = A4Reporter.NOP) {
+data class Execute(val sigs: List<KPrimSig<*>>, val options: A4Options, val reporter: A4Reporter = A4Reporter.NOP) {
   fun run(`for`: Int, but: Int, seq: Int, formula: KFormula): A4Solution =
     TranslateAlloyToKodkod.execute_command(
       reporter,
@@ -16,6 +16,9 @@ data class Execute(val sigs: List<KPrimSig>, val options: A4Options, val reporte
       options
     )
 
+  fun run(`for`: Int, but: Int, seq: Int, formula: FormulaBuilder.() -> Unit): A4Solution =
+    run(`for`, but, seq, FormulaBuilder().also(formula).build())
+
   fun check(`for`: Int, but: Int, seq: Int, formula: KFormula): A4Solution =
     TranslateAlloyToKodkod.execute_command(
       reporter,
@@ -23,11 +26,14 @@ data class Execute(val sigs: List<KPrimSig>, val options: A4Options, val reporte
       checkCommand(`for`, but, seq, formula),
       options
     )
+
+  fun check(`for`: Int, but: Int, seq: Int, formula: FormulaBuilder.() -> Unit): A4Solution =
+    check(`for`, but, seq, FormulaBuilder().also(formula).build())
 }
 
 @OptIn(ExperimentalTypeInference::class)
 fun <A> execute(
-  sigs: List<KPrimSig>,
+  sigs: List<KPrimSig<*>>,
   options: A4Options.() -> Unit = { },
   reporter: A4Reporter = A4Reporter.NOP,
   @BuilderInference block: Execute.() -> A
