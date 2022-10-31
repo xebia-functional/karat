@@ -13,6 +13,7 @@ repositories {
 
 dependencies {
     implementation(files("vendor/org.alloytools.alloy.dist.jar"))
+    implementation(kotlin("reflect"))
 }
 
 tasks.test {

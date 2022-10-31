@@ -85,6 +85,12 @@ fun <A> `for`(
   return KFormula(op.make(null, null, listOf(arg.decl), block(arg).expr))
 }
 
+fun <A> `for`(
+  op: ExprQt.Op,
+  t1: KSet<A>,
+  fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
+): KFormula = `for`(op, fn.parameters[0].name!! to t1, fn)
+
 fun <A, B> `for`(
   op: ExprQt.Op,
   x: Pair<String, KSet<A>>,
@@ -95,3 +101,10 @@ fun <A, B> `for`(
   val arg2 = y.second.arg(y.first)
   return KFormula(op.make(null, null, listOf(arg1.decl, arg2.decl), block(arg1, arg2).expr))
 }
+
+fun <A, B> `for`(
+  op: ExprQt.Op,
+  t1: KSet<A>,
+  t2: KSet<B>,
+  fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
+): KFormula = `for`(op, fn.parameters[0].name!! to t1, fn.parameters[2].name!! to t2, fn)
