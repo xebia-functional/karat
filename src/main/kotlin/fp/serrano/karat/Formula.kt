@@ -2,6 +2,7 @@ package fp.serrano.karat
 
 import edu.mit.csail.sdg.ast.Expr
 import edu.mit.csail.sdg.ast.ExprConstant
+import edu.mit.csail.sdg.ast.ExprQt
 
 interface TFormula
 
@@ -72,3 +73,10 @@ infix fun KFormula.implies(other: KFormula): KFormula =
 
 infix fun <A> KExpr<A>.`==`(other: KExpr<A>): KFormula =
   KFormula(this.expr.equal(other.expr))
+
+// quantification
+
+fun <A> `for`(op: ExprQt.Op, x: Pair<String, KSet<A>>, block: (KArg<A>) -> KFormula): KFormula {
+  val arg = x.second.arg(x.first)
+  return KFormula(op.make(null, null, listOf(arg.decl), block(arg).expr))
+}
