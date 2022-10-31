@@ -1,9 +1,11 @@
 package fp.serrano.karat
 
-import edu.mit.csail.sdg.ast.Decl
 import edu.mit.csail.sdg.ast.ExprCall
-import edu.mit.csail.sdg.ast.ExprVar
 import edu.mit.csail.sdg.ast.Func
+
+// the functions in this file should only be used if tyou are defining a recursive function within Alloy
+// (which is not really that common)
+// in any other case just regular Kotlin functions which return a KFormula
 
 open class KFunction<R>(val func: Func)
 

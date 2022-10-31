@@ -31,32 +31,6 @@ fun <A> inProductModule(
   block: context(Product, Status, Cart) () -> A
 ): A = block(Product, Status, Cart)
 
-// definition of functions within Alloy
-
-val addToCart =
-  inProductModule {
-    predicate("addToCart", "c" to Cart, "n" to Sigs.SIGINT) { c, n ->
-      +(c / status `==` Status.Open)
-      +(next(c / status) `==` Status.Open)
-    }
-  }
-
-val skip =
-  inProductModule {
-    predicate("skip") {
-      +(next(Product / available) `==` Product / available)
-      +(`for`(ExprQt.Op.ALL, "c" to Cart) { c ->
-        and {
-          +(next(c / status) `==` c / status)
-          +(next(c / amount) `==` c / amount)
-        }
-      })
-    }
-  }
-
-// should we really model predicates, or just use regular functions?
-// we can always use a plug-in to translate functions to the definitions
-
 fun addToCart2(c: KSet<Cart>, n: KSet<Int>) = and {
   +(c / Cart.status `==` Status.Open)
   +(next(c / Cart.status) `==` Status.Open)
