@@ -15,7 +15,7 @@ fun A4Solution.visualize() {
       solution.writeXML(xmlFilename)
       viz?.loadXML(xmlFilename, true)
     }
-    viz = VizGUI(true, "thingy.xml", null, computer, null, 1)
+    viz = VizGUI(true, "thingy.xml", null, computer, null, 2)
   } else {
     println("unsatisfiable")
   }

@@ -1,5 +1,7 @@
 package fp.serrano.karat
 
+import edu.mit.csail.sdg.ast.ExprQt
+
 // temporal formulae
 
 // just a trick to make code more readable
@@ -47,3 +49,65 @@ infix fun KFormula.since(other: KFormula) =
 
 infix fun KFormula.triggered(other: KFormula) =
   KFormula(this.expr.triggered(other.expr))
+
+// builder for temporal formulae
+
+fun temporal(block: KTemporalFormulaBuilder.() -> Unit): KFormula =
+  KTemporalFormulaBuilder().also(block).build()
+
+class KTemporalFormulaBuilder {
+  private val initials = mutableListOf<KFormula>()
+  private val transitions = mutableListOf<KFormula>()
+  private val checks = mutableListOf<KFormula>()
+
+  fun initial(block: () -> KFormula): Unit {
+    initials.add(block())
+  }
+
+  fun transition(block: () -> KFormula): Unit {
+    transitions.add(block())
+  }
+
+  fun check(block: () -> KFormula): Unit {
+    checks.add(block())
+  }
+
+  fun build(): KFormula =
+    and(initials) and always(or(transitions)) and and(checks)
+
+  fun KModule.skipTransition(): Unit =
+    transition { skip() }
+
+  fun Execute.skipTransition(): Unit =
+    transition { module.skip() }
+
+  fun <A> transition(
+    x: Pair<String, KSet<A>>,
+    block: (KArg<A>) -> KFormula
+  ): Unit = transition {
+    `for`(ExprQt.Op.SOME, x, block)
+  }
+
+  fun <A> transition(
+    t1: KSet<A>,
+    fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
+  ): Unit = transition {
+    `for`(ExprQt.Op.SOME, t1, fn)
+  }
+
+  fun <A, B> transition(
+    x: Pair<String, KSet<A>>,
+    y: Pair<String, KSet<B>>,
+    block: (KArg<A>, KArg<B>) -> KFormula
+  ): Unit = transition {
+    `for`(ExprQt.Op.SOME, x, y, block)
+  }
+
+  fun <A, B> transition(
+    t1: KSet<A>,
+    t2: KSet<B>,
+    fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
+  ): Unit = transition {
+    `for`(ExprQt.Op.SOME, t1, t2, fn)
+  }
+}

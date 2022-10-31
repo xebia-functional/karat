@@ -11,7 +11,7 @@ open class KFormula(expr: Expr): KExpr<TFormula>(expr)
 // paragraphs are sets of formulae in conjunction
 
 class KParagraphBuilder {
-  val formulae = mutableListOf<KFormula>()
+  private val formulae = mutableListOf<KFormula>()
 
   operator fun KFormula.unaryPlus() {
     formulae.add(this)
@@ -107,4 +107,4 @@ fun <A, B> `for`(
   t1: KSet<A>,
   t2: KSet<B>,
   fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
-): KFormula = `for`(op, fn.parameters[0].name!! to t1, fn.parameters[2].name!! to t2, fn)
+): KFormula = `for`(op, fn.parameters[0].name!! to t1, fn.parameters[1].name!! to t2, fn)

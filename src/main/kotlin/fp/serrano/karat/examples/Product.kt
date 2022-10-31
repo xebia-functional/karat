@@ -17,8 +17,8 @@ object Product: KSig<Product>("Product", Attr.ONE) {
 
 // the definition of an enumeration
 object Status: KSig<Status>("Status", Attr.ABSTRACT) {
-  object Open: KSig<Open>("Open", extends = Status, Attr.ONE) { }
-  object CheckedOut: KSig<CheckedOut>("CheckedOut", extends = Status, Attr.ONE) { }
+  object Open: KSig<Open>("Open", extends = Status, Attr.ONE)
+  object CheckedOut: KSig<CheckedOut>("CheckedOut", extends = Status, Attr.ONE)
 }
 
 object Cart: KSig<Cart>("Cart") {
@@ -38,23 +38,26 @@ fun checkOut2(c: KSet<Cart>) = and {
   +stays(c / Cart.amount)
 }
 
+val description = temporal {
+  initial {
+    `for`(ExprQt.Op.ALL, "c" to Cart) {
+        c -> c / Cart.status `==` Status.Open
+    }
+  }
+  productModule.skipTransition()
+  transition(Cart, Sigs.SIGINT, ::addToCart2)
+  transition(Cart, ::checkOut2)
+  check {
+    eventually {
+      `for`(ExprQt.Op.SOME, "c" to Cart) {
+          c -> c / Cart.status `==` Status.CheckedOut
+      }
+    }
+  }
+}
+
 fun main() {
   inModule(productModule) {
-    run(4, 4, 4) {
-      and {
-        // initial state
-        + `for`(ExprQt.Op.ALL, "c" to Cart) { c -> c / Cart.status `==` Status.Open }
-        // transition (could be auto-derived)
-        + always {
-          productModule.skip() or
-                  `for`(ExprQt.Op.SOME, Cart, Sigs.SIGINT, ::addToCart2) or
-                  `for`(ExprQt.Op.SOME, Cart, ::checkOut2)
-        }
-        // things we want to happen
-        + eventually {
-          `for`(ExprQt.Op.SOME, "c" to Cart) { c -> c / Cart.status `==` Status.CheckedOut }
-        }
-      }
-    }.visualize()
+    run(4, 4, 4, description).visualize()
   }
 }
