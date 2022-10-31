@@ -2,8 +2,15 @@ package fp.serrano.karat
 
 // temporal formulae
 
+// just a trick to make code more readable
+fun <A> current(e: KSet<A>): KSet<A> =
+  e
+
 fun <A> next(e: KSet<A>): KSet<A> =
   KSet(e.expr.prime())
+
+fun <A> stays(e: KSet<A>): KFormula =
+  next(e) `==` current(e)
 
 fun always(formula: KFormula): KFormula =
   KFormula(formula.expr.always())

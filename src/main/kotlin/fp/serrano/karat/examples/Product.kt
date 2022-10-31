@@ -7,6 +7,10 @@ import fp.serrano.karat.ui.visualize
 
 // this is the actual definition
 
+val productModule = module {
+  sigs(Product, Status, Status.Open, Status.CheckedOut, Cart)
+}
+
 object Product: KSig<Product>("Product", Attr.ONE) {
   val available = variable("available", Sigs.SIGINT)
 }
@@ -22,34 +26,27 @@ object Cart: KSig<Cart>("Cart") {
   val amount = variable("amount", Sigs.SIGINT)
 }
 
-val productModule = module {
-  sigs(Product, Status, Status.Open, Status.CheckedOut, Cart)
-}
-
-// this allows us to use the field names directly
-fun <A> inProductModule(
-  block: context(Product, Status, Cart) () -> A
-): A = block(Product, Status, Cart)
-
 fun addToCart2(c: KSet<Cart>, n: KSet<Int>) = and {
-  +(c / Cart.status `==` Status.Open)
+  +(current(c / Cart.status) `==` Status.Open)
   +(next(c / Cart.status) `==` Status.Open)
+  +stays(c / Cart.amount)
 }
 
 fun checkOut2(c: KSet<Cart>) = and {
-  +(c / Cart.status `==` Status.Open)
+  +(current(c / Cart.status) `==` Status.Open)
   +(next(c / Cart.status) `==` Status.CheckedOut)
+  +stays(c / Cart.amount)
 }
 
 // this kinds of predicates could be derived automatically
 fun skip2() = and {
-  +(next(Product / Product.available) `==` Product / Product.available)
-  +(`for`(ExprQt.Op.ALL, "c" to Cart) { c ->
+  +stays(Product / Product.available)
+  +`for`(ExprQt.Op.ALL, "c" to Cart) { c ->
     and {
-      +(next(c / Cart.status) `==` c / Cart.status)
-      +(next(c / Cart.amount) `==` c / Cart.amount)
+      +stays(c / Cart.status)
+      +stays(c / Cart.amount)
     }
-  })
+  }
 }
 
 fun main() {
