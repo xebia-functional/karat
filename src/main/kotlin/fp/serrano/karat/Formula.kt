@@ -76,7 +76,22 @@ infix fun <A> KExpr<A>.`==`(other: KExpr<A>): KFormula =
 
 // quantification
 
-fun <A> `for`(op: ExprQt.Op, x: Pair<String, KSet<A>>, block: (KArg<A>) -> KFormula): KFormula {
+fun <A> `for`(
+  op: ExprQt.Op,
+  x: Pair<String, KSet<A>>,
+  block: (KArg<A>) -> KFormula
+): KFormula {
   val arg = x.second.arg(x.first)
   return KFormula(op.make(null, null, listOf(arg.decl), block(arg).expr))
+}
+
+fun <A, B> `for`(
+  op: ExprQt.Op,
+  x: Pair<String, KSet<A>>,
+  y: Pair<String, KSet<B>>,
+  block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula {
+  val arg1 = x.second.arg(x.first)
+  val arg2 = y.second.arg(y.first)
+  return KFormula(op.make(null, null, listOf(arg1.decl, arg2.decl), block(arg1, arg2).expr))
 }

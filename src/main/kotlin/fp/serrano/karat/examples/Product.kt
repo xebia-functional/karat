@@ -62,6 +62,12 @@ fun addToCart2(c: KSet<Cart>, n: KSet<Int>) = and {
   +(next(c / Cart.status) `==` Status.Open)
 }
 
+fun checkOut2(c: KSet<Cart>) = and {
+  +(c / Cart.status `==` Status.Open)
+  +(next(c / Cart.status) `==` Status.CheckedOut)
+}
+
+// this kinds of predicates could be derived automatically
 fun skip2() = and {
   +(next(Product / Product.available) `==` Product / Product.available)
   +(`for`(ExprQt.Op.ALL, "c" to Cart) { c ->
@@ -75,7 +81,20 @@ fun skip2() = and {
 fun main() {
   inModule(productModule) {
     run(4, 4, 4) {
-      always { skip2() }
+      and {
+        // initial state
+        + `for`(ExprQt.Op.ALL, "c" to Cart) { c -> c / Cart.status `==` Status.Open }
+        // transition (could be auto-derived)
+        + always {
+          skip2() or
+                  `for`(ExprQt.Op.SOME, "c" to Cart, "n" to Sigs.SIGINT, ::addToCart2) or
+                  `for`(ExprQt.Op.SOME, "c" to Cart, ::checkOut2)
+        }
+        // things we want to happen
+        + eventually {
+          `for`(ExprQt.Op.SOME, "c" to Cart) { c -> c / Cart.status `==` Status.CheckedOut }
+        }
+      }
     }.visualize()
   }
 }
