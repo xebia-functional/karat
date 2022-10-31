@@ -7,7 +7,7 @@ interface TFormula
 
 open class KFormula(expr: Expr): KExpr<TFormula>(expr)
 
-class FormulaBuilder {
+class KFormulaBuilder {
   val formulae = mutableListOf<KFormula>()
 
   operator fun KFormula.unaryPlus() {
@@ -19,6 +19,15 @@ class FormulaBuilder {
     else -> formulae.reduce { acc, f -> acc.and(f) }
   }
 }
+
+fun (KFormulaBuilder.() -> Unit).build(): KFormula =
+  KFormulaBuilder().also(this).build()
+
+fun <A> (KFormulaBuilder.(A) -> Unit).build(x: A): KFormula =
+  KFormulaBuilder().apply { this@build(x) }.build()
+
+fun paragraph(block: KFormulaBuilder.() -> Unit): KFormula =
+  block.build()
 
 infix fun KFormula.or(other: KFormula): KFormula =
   KFormula(this.expr.or(other.expr))
