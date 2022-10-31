@@ -17,8 +17,8 @@ class KModuleBuilder {
     facts.add(formula)
   }
 
-  fun fact(formula: KFormulaBuilder.() -> Unit) {
-    fact(formula.build())
+  fun fact(formula: () -> KFormula) {
+    facts.add(formula())
   }
 
   fun build(): KModule = KModule(sigs.toList(), facts.toList())

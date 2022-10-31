@@ -12,23 +12,23 @@ data class Execute(val module: KModule, val options: A4Options, val reporter: A4
     TranslateAlloyToKodkod.execute_command(
       reporter,
       module.sigs.map { it.primSig },
-      runCommand(`for`, but, seq, formula),
+      runCommand(`for`, but, seq, and(module.facts) and formula),
       options
     )
 
-  fun run(`for`: Int, but: Int, seq: Int, formula: KFormulaBuilder.() -> Unit): A4Solution =
-    run(`for`, but, seq, formula.build())
+  fun run(`for`: Int, but: Int, seq: Int, formula: () -> KFormula): A4Solution =
+    run(`for`, but, seq, formula())
 
   fun check(`for`: Int, but: Int, seq: Int, formula: KFormula): A4Solution =
     TranslateAlloyToKodkod.execute_command(
       reporter,
       module.sigs.map { it.primSig },
-      checkCommand(`for`, but, seq, formula),
+      checkCommand(`for`, but, seq, and(module.facts) and not(formula)),
       options
     )
 
-  fun check(`for`: Int, but: Int, seq: Int, formula: KFormulaBuilder.() -> Unit): A4Solution =
-    check(`for`, but, seq, formula.build())
+  fun check(`for`: Int, but: Int, seq: Int, formula: () -> KFormula): A4Solution =
+    check(`for`, but, seq, formula())
 }
 
 @OptIn(ExperimentalTypeInference::class)
