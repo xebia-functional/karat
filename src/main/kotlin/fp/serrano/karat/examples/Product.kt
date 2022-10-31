@@ -7,10 +7,6 @@ import fp.serrano.karat.ui.visualize
 
 // this is the actual definition
 
-val productModule = module {
-  sigs(Product, Status, Status.Open, Status.CheckedOut, Cart)
-}
-
 object Product: KSig<Product>("Product", Attr.ONE) {
   val available = variable("available", Sigs.SIGINT)
 }
@@ -38,26 +34,27 @@ fun checkOut2(c: KSet<Cart>) = and {
   +stays(c / Cart.amount)
 }
 
-val description = temporal {
-  initial {
-    `for`(ExprQt.Op.ALL, "c" to Cart) {
-        c -> c / Cart.status `==` Status.Open
-    }
-  }
-  productModule.skipTransition()
-  transition(Cart, Sigs.SIGINT, ::addToCart2)
-  transition(Cart, ::checkOut2)
-  check {
-    eventually {
-      `for`(ExprQt.Op.SOME, "c" to Cart) {
-          c -> c / Cart.status `==` Status.CheckedOut
+val productModule: KModule = module {
+  sigs(Product, Status, Status.Open, Status.CheckedOut, Cart)
+  stateMachine(skip = true) {
+    initial {
+      `for`(ExprQt.Op.ALL, "c" to Cart) {
+          c -> c / Cart.status `==` Status.Open
       }
     }
+    transition(Cart, Sigs.SIGINT, ::addToCart2)
+    transition(Cart, ::checkOut2)
   }
 }
 
 fun main() {
   inModule(productModule) {
-    run(4, 4, 4, description).visualize()
+    run(4, 4, 4) {
+      eventually {
+        `for`(ExprQt.Op.SOME, "c" to Cart) {
+            c -> c / Cart.status `==` Status.CheckedOut
+        }
+      }
+    }.visualize()
   }
 }

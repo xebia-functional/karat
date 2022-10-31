@@ -46,5 +46,13 @@ class KModuleBuilder {
     facts.add(formula())
   }
 
+  fun stateMachine(skip: Boolean, block: KTemporalFormulaBuilder.() -> Unit) =
+    fact {
+      temporal {
+        if (skip) skipTransition()
+        block()
+      }
+    }
+
   fun build(): KModule = KModule(sigs.toList(), facts.toList())
 }

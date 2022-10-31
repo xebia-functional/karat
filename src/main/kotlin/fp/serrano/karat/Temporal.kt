@@ -78,6 +78,9 @@ class KTemporalFormulaBuilder {
   fun KModule.skipTransition(): Unit =
     transition { skip() }
 
+  fun KModuleBuilder.skipTransition(): Unit =
+    build().skipTransition()
+
   fun Execute.skipTransition(): Unit =
     transition { module.skip() }
 
