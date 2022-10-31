@@ -18,7 +18,7 @@ val courseWorld = module {
 }
 
 fun main() {
-  with(courseWorld) {
+  inModule(courseWorld) {
     run(4, 4, 4) {
       Constants.TRUE
     }.visualize()

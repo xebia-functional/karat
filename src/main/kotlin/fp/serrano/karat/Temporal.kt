@@ -1,10 +1,8 @@
 package fp.serrano.karat
 
-import fp.serrano.karat.examples.A
-
 // temporal formulae
 
-fun next(e: KSet<A>): KSet<A> =
+fun <A> next(e: KSet<A>): KSet<A> =
   KSet(e.expr.prime())
 
 fun always(formula: KFormula): KFormula =

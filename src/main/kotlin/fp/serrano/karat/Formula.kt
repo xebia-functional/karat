@@ -25,6 +25,9 @@ fun (KParagraphBuilder.() -> Unit).build(): KFormula =
 fun <A> (KParagraphBuilder.(A) -> Unit).build(x: A): KFormula =
   KParagraphBuilder().apply { this@build(x) }.build()
 
+fun <A, B> (KParagraphBuilder.(A, B) -> Unit).build(x: A, y: B): KFormula =
+  KParagraphBuilder().apply { this@build(x, y) }.build()
+
 fun paragraph(block: KParagraphBuilder.() -> Unit): KFormula =
   block.build()
 
@@ -64,3 +67,8 @@ infix fun KFormula.iff(other: KFormula): KFormula =
 
 infix fun KFormula.implies(other: KFormula): KFormula =
   KFormula(this.expr.implies(other.expr))
+
+// comparisons
+
+infix fun <A> KExpr<A>.`==`(other: KExpr<A>): KFormula =
+  KFormula(this.expr.equal(other.expr))

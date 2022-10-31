@@ -1,17 +1,8 @@
 package fp.serrano.karat.examples
 
 import edu.mit.csail.sdg.ast.Attr
-import fp.serrano.karat.KSig
-import fp.serrano.karat.div
-import fp.serrano.karat.with
-import fp.serrano.karat.field
-import fp.serrano.karat.`lone --# lone`
-import fp.serrano.karat.module
-import fp.serrano.karat.no
-import fp.serrano.karat.oneOf
-import fp.serrano.karat.some
-import fp.serrano.karat.someOf
-import fp.serrano.karat.ui.visualize
+import fp.serrano.karat.*
+import fp.serrano.karat.ui.*
 
 // http://alloytools.org/documentation/code/ExampleUsingTheAPI.java.html
 // http://alloytools.org/documentation/code/ExampleUsingTheCompiler.java.html
@@ -37,7 +28,7 @@ val world = module {
 }
 
 fun main() {
-  with(world) {
+  inModule(world) {
     run(3, 3, 3) {
       some(A)
     }.visualize()
