@@ -32,7 +32,7 @@ data class Execute(val module: KModule, val options: A4Options, val reporter: A4
 }
 
 @OptIn(ExperimentalTypeInference::class)
-fun <A> execute(
+fun <A> with(
   module: KModule,
   options: A4Options.() -> Unit = { solver = A4Options.SatSolver.SAT4J },
   reporter: A4Reporter = A4Reporter.NOP,

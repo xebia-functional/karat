@@ -3,7 +3,7 @@ package fp.serrano.karat.examples
 import edu.mit.csail.sdg.ast.Attr
 import fp.serrano.karat.KSig
 import fp.serrano.karat.div
-import fp.serrano.karat.execute
+import fp.serrano.karat.with
 import fp.serrano.karat.field
 import fp.serrano.karat.`lone --# lone`
 import fp.serrano.karat.module
@@ -37,9 +37,9 @@ val world = module {
 }
 
 fun main() {
-  execute(world) {
+  with(world) {
     run(3, 3, 3) {
       some(A)
-    }
-  }.visualize()
+    }.visualize()
+  }
 }

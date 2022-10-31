@@ -4,10 +4,10 @@ import edu.mit.csail.sdg.ast.Expr
 import fp.serrano.karat.examples.A
 
 // this represent a set of element, possibly with a multiplicity
-open class KSet<A>(expr: Expr): KExpr<Set<A>>(expr)
+open class KSet<out A>(expr: Expr): KExpr<Set<A>>(expr)
 // a relation is a set of tuples
 // (unfortunately we cannot flatten them as in Alloy)
-open class KRelation<A, B>(expr: Expr): KSet<Pair<A, B>>(expr)
+open class KRelation<out A, out B>(expr: Expr): KSet<Pair<A, B>>(expr)
 
 // functions to create formulae
 
@@ -67,6 +67,9 @@ operator fun <A, B, C> KRelation<A, B>.div(other: KRelation<B, C>): KRelation<A,
 
 operator fun <A, B> KRelation<A, B>.div(other: KSet<B>): KSet<A> =
   KSet(this.expr.join(other.expr))
+
+operator fun <A, B> KRelation<A, B>.get(other: KSet<A>): KSet<B> =
+  other / this
 
 // functions to create relations
 

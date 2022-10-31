@@ -9,7 +9,7 @@ object Course: KSig<Course>("Course") {
   val students = field("students", setOf(Person))
 
   init {
-    fact { no ((it / teacher) `&` (it / students)) }
+    fact { no (teacher[it] `&` students[it]) }
   }
 }
 
@@ -18,9 +18,9 @@ val courseWorld = module {
 }
 
 fun main() {
-  execute(courseWorld) {
+  with(courseWorld) {
     run(4, 4, 4) {
       Constants.TRUE
-    }
-  }.visualize()
+    }.visualize()
+  }
 }

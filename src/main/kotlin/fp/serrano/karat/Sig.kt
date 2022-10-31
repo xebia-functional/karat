@@ -18,7 +18,7 @@ class Sigs {
   }
 }
 
-open class KSig<A>(val primSig: PrimSig): KSet<A>(primSig) {
+open class KSig<out A>(val primSig: PrimSig): KSet<A>(primSig) {
   constructor(name: String, vararg attributes: Attr)
           : this(PrimSig(name, *attributes))
   constructor(name: String, extends: KSig<*>, vararg attributes: Attr)
