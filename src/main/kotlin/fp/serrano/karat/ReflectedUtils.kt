@@ -18,6 +18,8 @@ interface ReflectedModule {
 
   infix fun <A: Any, B: A> KExpr<Set<A>>.`==`(other: KClass<B>): KFormula =
     this `==` set(other)
+
+  fun nextUnique(klass: KClass<*>): String
 }
 
 fun <A: Any> ReflectedModule.someOf(klass: KClass<A>): KSet<A> = someOf(set(klass))

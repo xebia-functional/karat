@@ -1,5 +1,7 @@
 package fp.serrano.karat
 
+import kotlin.reflect.KClass
+
 // for classes
 // - abstract represents 'abstract'
 // - one represented 'one'
@@ -22,3 +24,6 @@ annotation class lone
 annotation class one
 @Target(AnnotationTarget.PROPERTY)
 annotation class some
+
+@Target(AnnotationTarget.CLASS)
+annotation class initial()

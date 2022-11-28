@@ -18,24 +18,42 @@ data class Cart(
   @reflect var amount: Int
 )
 
-fun KModuleBuilder.addToCart2(c: KSet<Cart>, n: KSet<Int>) = and {
-  +(current(c / Cart::status) `==` element<Status.Open>())
-  +(next(c / Cart::status) `==` element<Status.Open>())
-  +stays(c / Cart::amount)
+sealed interface Machine: StateMachine
+@initial object Initial: Machine {
+  override fun ReflectedModule.execute() =
+    forAll { c -> c / Cart::status `==` element<Status.Open>() }
 }
-
-fun KModuleBuilder.checkOut2(c: KSet<Cart>) = and {
-  +(current(c / Cart::status) `==` element<Status.Open>())
-  +(next(c / Cart::status) `==` element<Status.CheckedOut>())
-  +stays(c / Cart::amount)
+data class BuyProduct(val c: KArg<Cart>, val n: KArg<Int>): Machine {
+  override fun ReflectedModule.execute() = and {
+    + (current(c / Cart::status) `==` element<Status.Open>())
+    + (next(c / Cart::status) `==` element<Status.Open>())
+    + stays(c / Cart::amount)
+  }
+}
+data class CheckOut(val c: KArg<Cart>): Machine {
+  override fun ReflectedModule.execute() = and {
+    + (current(c / Cart::status) `==` element<Status.Open>())
+    + (next(c / Cart::status) `==` element<Status.CheckedOut>())
+    + stays(c / Cart::amount)
+  }
 }
 
 fun KModuleBuilder.productMachine() = stateMachine(skip = true) {
   initial {
-    forAll("c") { c -> c / Cart::status `==` element<Status.Open>() }
+    forAll { c -> c / Cart::status `==` element<Status.Open>() }
   }
-  transition2(::addToCart2)
-  transition1(::checkOut2)
+  transition("buys a product") { c, n: KArg<Int> -> and {
+      + (current(c / Cart::status) `==` element<Status.Open>())
+      + (next(c / Cart::status) `==` element<Status.Open>())
+      + stays(c / Cart::amount)
+    }
+  }
+  transition("checks out") { c -> and {
+      + (current(c / Cart::status) `==` element<Status.Open>())
+      + (next(c / Cart::status) `==` element<Status.CheckedOut>())
+      + stays(c / Cart::amount)
+    }
+  }
 }
 
 fun main() {
@@ -44,11 +62,12 @@ fun main() {
       Status::class, Status.Open::class, Status.CheckedOut::class,
       Product::class, Cart::class
     )
-    productMachine()
+    // productMachine()
+    reflectMachine(Machine::class)
 
     run(4, 4, 4) {
       eventually {
-        forSome("c") { c -> c / Cart::status `==` element<Status.CheckedOut>() }
+        forSome { c -> c / Cart::status `==` element<Status.CheckedOut>() }
       }
     }.visualize()
   }

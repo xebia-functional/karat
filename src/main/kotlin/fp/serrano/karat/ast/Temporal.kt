@@ -86,6 +86,11 @@ class KTemporalFormulaBuilder {
     `for`(ExprQt.Op.SOME, x, block)
   }
 
+  inline fun <reified A: Any> ReflectedModule.transition(
+    name: String? = null,
+    noinline block: (KArg<A>) -> KFormula
+  ): Unit = transition(nextUnique(A::class) to set(A::class), block)
+
   fun <A> transition(
     t1: KSet<A>,
     fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
@@ -104,6 +109,11 @@ class KTemporalFormulaBuilder {
   ): Unit = transition {
     `for`(ExprQt.Op.SOME, x, y, block)
   }
+
+  inline fun <reified A: Any, reified B: Any> ReflectedModule.transition(
+    name: String? = null,
+    noinline block: (KArg<A>, KArg<B>) -> KFormula
+  ): Unit = transition(nextUnique(A::class) to set(A::class), nextUnique(B::class) to set(B::class), block)
 
   fun <A, B> transition(
     t1: KSet<A>,

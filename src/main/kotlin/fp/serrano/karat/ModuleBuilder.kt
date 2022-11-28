@@ -2,6 +2,7 @@ package fp.serrano.karat
 
 import edu.mit.csail.sdg.ast.Attr
 import fp.serrano.karat.ast.*
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.reflect.*
 import kotlin.reflect.full.*
 
@@ -15,6 +16,8 @@ open class KModuleBuilder: ReflectedModule {
   data class ReflectedSig<A>(val sig: KSig<A>, val fields: MutableMap<KProperty1<*, *>, KField<*, *>> = mutableMapOf())
   val reflectedSigs: MutableMap<KClass<*>, ReflectedSig<*>> = mutableMapOf()
 
+  var unique: AtomicLong = AtomicLong(0L)
+
   fun sig(newSig: KSig<*>) {
     sigs(newSig)
   }
@@ -22,7 +25,25 @@ open class KModuleBuilder: ReflectedModule {
     sigs.addAll(newSigs)
   }
 
-  fun reflect(vararg klasses: KClass<*>) {
+  override fun nextUnique(klass: KClass<*>): String {
+    val n = klass.simpleName ?: "var"
+    val i = unique.incrementAndGet()
+    return "__${n}__$i"
+  }
+
+  internal fun recordSig(newSig: KSig<*>) {
+    sig(newSig)
+  }
+
+  internal fun recordSig(klass: KClass<*>, newSig: KSig<*>) {
+    reflectedSigs[klass] = ReflectedSig(newSig)
+    recordSig(newSig)
+  }
+
+  fun reflect(vararg klasses: KClass<*>) =
+    reflect(false, *klasses)
+
+  fun reflect(reflectAll: Boolean, vararg klasses: KClass<*>) {
     // step 1, generate all signatures
     klasses.forEach { klass ->
       // a. find the attributes
@@ -41,8 +62,7 @@ open class KModuleBuilder: ReflectedModule {
         else -> KSig(klass, klass.simpleName!!, superSig, *attribs.toTypedArray())
       }
       // d. record it
-      reflectedSigs[klass] = ReflectedSig(newSig)
-      sig(newSig)
+      recordSig(klass, newSig)
     }
     // step 2, generate all fields
     klasses.forEach { klass ->
@@ -50,7 +70,7 @@ open class KModuleBuilder: ReflectedModule {
       klass.declaredMemberProperties
         // a. only the reflected ones
         .filter {
-          it.hasAnnotation<reflect>()
+          reflectAll || it.hasAnnotation<reflect>()
         }
         .forEach { property ->
           // b. figure out the type
@@ -112,7 +132,7 @@ open class KModuleBuilder: ReflectedModule {
     findSet(klass)!!
 
   @Suppress("UNCHECKED_CAST")
-  private fun <A : Any> findSet(klass: KClass<A>?): KSig<A>? =
+  internal fun <A : Any> findSet(klass: KClass<A>?): KSig<A>? =
     when {
       klass == null -> null
       klass.isSubclassOf(Int::class) -> Sigs.SIGINT
@@ -141,10 +161,11 @@ open class KModuleBuilder: ReflectedModule {
 
   fun stateMachine(skip: Boolean, block: KTemporalFormulaBuilder.() -> Unit) =
     fact {
-      temporal {
+      val t = temporal {
         if (skip) skipTransition()
         block()
       }
+      t
     }
 
   fun build(): KModule = KModule(sigs.toList(), facts.toList())

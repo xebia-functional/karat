@@ -75,6 +75,9 @@ infix fun KFormula.implies(other: KFormula): KFormula =
 infix fun <A> KExpr<A>.`==`(other: KExpr<A>): KFormula =
   KFormula(this.expr.equal(other.expr))
 
+infix fun <A> KExpr<A>.`in`(other: KSet<A>): KFormula =
+  KFormula(this.expr.`in`(other.expr))
+
 // quantification
 
 fun <A> `for`(
@@ -135,6 +138,10 @@ inline fun <reified A: Any> ReflectedModule.forAll(
   noinline block: (KArg<A>) -> KFormula
 ): KFormula = `for`(ExprQt.Op.ALL, x, block)
 
+inline fun <reified A: Any> ReflectedModule.forAll(
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ALL, nextUnique(A::class), block)
+
 fun <A> forAll(
   t1: KSet<A>,
   fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
@@ -152,6 +159,10 @@ inline fun <reified A: Any, reified B: Any> ReflectedModule.forAll(
   noinline block: (KArg<A>, KArg<B>) -> KFormula
 ): KFormula = `for`(ExprQt.Op.ALL, x, y, block)
 
+inline fun <reified A: Any, reified B: Any> ReflectedModule.forAll(
+  noinline block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ALL, nextUnique(A::class), nextUnique(B::class), block)
+
 fun <A, B> forAll(
   t1: KSet<A>,
   t2: KSet<B>,
@@ -167,6 +178,10 @@ inline fun <reified A: Any> ReflectedModule.forSome(
   x: String,
   noinline block: (KArg<A>) -> KFormula
 ): KFormula = `for`(ExprQt.Op.SOME, x, block)
+
+inline fun <reified A: Any> ReflectedModule.forSome(
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.SOME, nextUnique(A::class), block)
 
 fun <A> forSome(
   t1: KSet<A>,
@@ -184,6 +199,10 @@ inline fun <reified A: Any, reified B: Any> ReflectedModule.forSome(
   y: String,
   noinline block: (KArg<A>, KArg<B>) -> KFormula
 ): KFormula = `for`(ExprQt.Op.SOME, x, y, block)
+
+inline fun <reified A: Any, reified B: Any> ReflectedModule.forSome(
+  noinline block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.SOME, nextUnique(A::class), nextUnique(B::class), block)
 
 fun <A, B> forSome(
   t1: KSet<A>,

@@ -1,8 +1,7 @@
 package fp.serrano.karat.ast
 
 import edu.mit.csail.sdg.ast.ExprQt
-import kotlin.reflect.KProperty1
-import kotlin.reflect.full.declaredMemberProperties
+import edu.mit.csail.sdg.ast.Sig
 
 data class KModule(val sigs: List<KSig<*>>, val facts: List<KFormula>)
 
@@ -10,18 +9,12 @@ data class KModule(val sigs: List<KSig<*>>, val facts: List<KFormula>)
 fun KModule.skip(): KFormula =
   and {
     sigs
-      .map { it to it::class }
-      .forEach { (sig, klass) ->
-        +`for`(ExprQt.Op.ALL, sig.primSig.label to sig) { arg ->
+      .forEach { sig ->
+        +`for`(ExprQt.Op.ALL, sig.primSig.label.toLowerCase() to sig) { arg ->
           and {
-            klass.declaredMemberProperties
-              .mapNotNull { property ->
-                val getter = property as KProperty1<KSig<*>, *>
-                getter(sig) as? KField<*, *>
-              }
-              .forEach {
-                +stays(arg / it)
-              }
+            sig.primSig.fields.forEach { field: Sig.Field ->
+              +stays(arg / KRelation<Any, Any>(field))
+            }
           }
         }
       }
