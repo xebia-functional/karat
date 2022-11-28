@@ -10,9 +10,9 @@ fun KModule.skip(): KFormula =
   and {
     sigs
       .forEach { sig ->
-        +`for`(ExprQt.Op.ALL, sig.primSig.label.toLowerCase() to sig) { arg ->
+        +`for`(ExprQt.Op.ALL, sig.sig.label.toLowerCase() to sig) { arg ->
           and {
-            sig.primSig.fields.forEach { field: Sig.Field ->
+            sig.sig.fields.forEach { field: Sig.Field ->
               +stays(arg / KRelation<Any, Any>(field))
             }
           }

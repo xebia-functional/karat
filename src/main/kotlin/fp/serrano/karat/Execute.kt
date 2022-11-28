@@ -21,14 +21,14 @@ data class ExecuteWithModule(val module: KModule, val options: A4Options, val re
   override fun run(`for`: Int, but: Int, seq: Int, formula: KFormula): A4Solution =
     TranslateAlloyToKodkod.execute_command(
       reporter,
-      module.sigs.map { it.primSig },
+      module.sigs.map { it.sig },
       runCommand(`for`, but, seq, and(module.facts) and formula),
       options
     )
   override fun check(`for`: Int, but: Int, seq: Int, formula: KFormula): A4Solution =
     TranslateAlloyToKodkod.execute_command(
       reporter,
-      module.sigs.map { it.primSig },
+      module.sigs.map { it.sig },
       checkCommand(`for`, but, seq, and(module.facts) and not(formula)),
       options
     )

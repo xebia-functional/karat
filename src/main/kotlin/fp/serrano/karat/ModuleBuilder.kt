@@ -13,7 +13,7 @@ open class KModuleBuilder: ReflectedModule {
   val sigs: MutableList<KSig<*>> = mutableListOf()
   val facts: MutableList<KFormula> = mutableListOf()
 
-  data class ReflectedSig<A>(val sig: KSig<A>, val fields: MutableMap<KProperty1<*, *>, KField<*, *>> = mutableMapOf())
+  data class ReflectedSig<A>(val sig: KPrimSig<A>, val fields: MutableMap<KProperty1<*, *>, KField<*, *>> = mutableMapOf())
   val reflectedSigs: MutableMap<KClass<*>, ReflectedSig<*>> = mutableMapOf()
 
   var unique: AtomicLong = AtomicLong(0L)
@@ -35,7 +35,7 @@ open class KModuleBuilder: ReflectedModule {
     sig(newSig)
   }
 
-  internal fun recordSig(klass: KClass<*>, newSig: KSig<*>) {
+  internal fun recordSig(klass: KClass<*>, newSig: KPrimSig<*>) {
     reflectedSigs[klass] = ReflectedSig(newSig)
     recordSig(newSig)
   }
@@ -58,8 +58,8 @@ open class KModuleBuilder: ReflectedModule {
       }
       // c. generate the thing
       val newSig = when (superSig) {
-        null -> KSig(klass, klass.simpleName!!, *attribs.toTypedArray())
-        else -> KSig(klass, klass.simpleName!!, superSig, *attribs.toTypedArray())
+        null -> KPrimSig(klass, klass.simpleName!!, *attribs.toTypedArray())
+        else -> KPrimSig(klass, klass.simpleName!!, superSig, *attribs.toTypedArray())
       }
       // d. record it
       recordSig(klass, newSig)

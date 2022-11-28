@@ -8,17 +8,17 @@ import fp.serrano.karat.ui.visualize
 
 // this is the actual definition
 
-object Product: KSig<Product>("Product", Attr.ONE) {
+object Product: KPrimSig<Product>("Product", Attr.ONE) {
   val available = variable("available", Sigs.SIGINT)
 }
 
 // the definition of an enumeration
-object Status: KSig<Status>("Status", Attr.ABSTRACT) {
-  object Open: KSig<Open>("Open", extends = Status, Attr.ONE)
-  object CheckedOut: KSig<CheckedOut>("CheckedOut", extends = Status, Attr.ONE)
+object Status: KPrimSig<Status>("Status", Attr.ABSTRACT) {
+  object Open: KPrimSig<Open>("Open", extends = Status, Attr.ONE)
+  object CheckedOut: KPrimSig<CheckedOut>("CheckedOut", extends = Status, Attr.ONE)
 }
 
-object Cart: KSig<Cart>("Cart") {
+object Cart: KPrimSig<Cart>("Cart") {
   val status = variable("status", Status)
   val amount = variable("amount", Sigs.SIGINT)
 }

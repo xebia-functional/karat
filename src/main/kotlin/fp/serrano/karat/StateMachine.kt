@@ -17,7 +17,6 @@ fun <A: StateMachine> KModuleBuilder.reflectMachine(
   klass: KClass<A>,
   skip: Boolean = true,
   transitionSigName: String = "Transition",
-  currentName: String = "current",
   skipName: String = "Skip"
 ) = stateMachine(skip = false) {
   if (!klass.java.isInterface || !klass.isSealed || klass.declaredMembers.isNotEmpty())
@@ -26,18 +25,17 @@ fun <A: StateMachine> KModuleBuilder.reflectMachine(
   val skipFormula = this@reflectMachine.build().skip()
 
   // 1. declare the top of the hierarchy
-  val newSig = KSig(klass, klass.simpleName!!, Attr.ABSTRACT)
+  val newSig = KPrimSig(klass, klass.simpleName!!, Attr.ABSTRACT)
   recordSig(klass, newSig)
 
   // 2. declare a single element to hold the current transition
-  val stateSig = KSig<Nothing>(transitionSigName, Attr.ONE)
+  val stateSig = KSubsetSig<Nothing>(transitionSigName, newSig, Attr.ONE, Attr.VARIABLE)
   recordSig(stateSig)
-  val currentState = stateSig.variable(currentName, newSig)
-  val currentStateRef = stateSig / currentState
+  val currentStateRef = stateSig
 
   // 3. declare the skip transition
   if (skip) {
-    val skipSig = KSig<Nothing>(skipName, extends = newSig, Attr.ONE)
+    val skipSig = KPrimSig<Nothing>(skipName, extends = newSig, Attr.ONE)
     recordSig(skipSig)
     transition {
       skipFormula and (next(currentStateRef) `==` skipSig)
@@ -48,9 +46,9 @@ fun <A: StateMachine> KModuleBuilder.reflectMachine(
   klass.sealedSubclasses.forEach { transitionKlass ->
     val transitionSig =
       if (transitionKlass.objectInstance == null)
-        KSig(transitionKlass, transitionKlass.simpleName!!, extends = newSig, Attr.ONE)
+        KPrimSig(transitionKlass, transitionKlass.simpleName!!, extends = newSig, Attr.ONE)
       else
-        KSig(transitionKlass, transitionKlass.simpleName!!, extends = newSig)
+        KPrimSig(transitionKlass, transitionKlass.simpleName!!, extends = newSig)
     recordSig(transitionKlass, transitionSig)
 
     if (transitionKlass.hasAnnotation<initial>()) {

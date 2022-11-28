@@ -4,8 +4,8 @@ import fp.serrano.karat.*
 import fp.serrano.karat.ast.*
 import fp.serrano.karat.ui.visualize
 
-object Person: KSig<Person>("Person")
-object Course: KSig<Course>("Course") {
+object Person: KPrimSig<Person>("Person")
+object Course: KPrimSig<Course>("Course") {
   val teacher = field("teacher", Person)
   val students = field("students", setOf(Person))
 

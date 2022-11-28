@@ -2,6 +2,7 @@ package fp.serrano.karat.examples.sig_object
 
 import edu.mit.csail.sdg.ast.Attr
 import fp.serrano.karat.*
+import fp.serrano.karat.ast.KPrimSig
 import fp.serrano.karat.ast.KSig
 import fp.serrano.karat.ast.div
 import fp.serrano.karat.ast.field
@@ -15,7 +16,7 @@ import fp.serrano.karat.ui.*
 // http://alloytools.org/documentation/code/ExampleUsingTheAPI.java.html
 // http://alloytools.org/documentation/code/ExampleUsingTheCompiler.java.html
 
-object A: KSig<A>("A", Attr.ABSTRACT) {
+object A: KPrimSig<A>("A", Attr.ABSTRACT) {
   val f = field("f", B `lone --# lone` B)
   val g = field("g", oneOf(B))
 
@@ -24,9 +25,9 @@ object A: KSig<A>("A", Attr.ABSTRACT) {
   }
 }
 
-object A1: KSig<A1>("A1", extends = A)
+object A1: KPrimSig<A1>("A1", extends = A)
 
-object B: KSig<B>("B") {
+object B: KPrimSig<B>("B") {
   val h = field("h", someOf(A))
 }
 
