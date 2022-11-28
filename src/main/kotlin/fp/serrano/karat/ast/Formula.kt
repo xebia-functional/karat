@@ -142,6 +142,11 @@ inline fun <reified A: Any> ReflectedModule.forAll(
   noinline block: (KArg<A>) -> KFormula
 ): KFormula = `for`(ExprQt.Op.ALL, nextUnique(A::class), block)
 
+inline fun <reified A: Any> ReflectedModule.forAll(
+  s: KSet<A>,
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ALL, nextUnique(A::class) to s, block)
+
 fun <A> forAll(
   t1: KSet<A>,
   fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
@@ -178,6 +183,11 @@ inline fun <reified A: Any> ReflectedModule.forSome(
   x: String,
   noinline block: (KArg<A>) -> KFormula
 ): KFormula = `for`(ExprQt.Op.SOME, x, block)
+
+inline fun <reified A: Any> ReflectedModule.forSome(
+  s: KSet<A>,
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.SOME, nextUnique(A::class) to s, block)
 
 inline fun <reified A: Any> ReflectedModule.forSome(
   noinline block: (KArg<A>) -> KFormula

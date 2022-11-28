@@ -28,9 +28,11 @@ data class BuyProduct(val c: KArg<Cart>, val n: KArg<Int>): Machine {
     + (current(c / Cart::status) `==` element<Status.Open>())
     + (next(c / Cart::status) `==` element<Status.Open>())
     + stays(c / Cart::amount)
-    + forAll("x" to set<Cart>() - c) { other ->
+    // things that stay the same
+    + forAll(set<Cart>() - c) { other ->
       stays(other / Cart::status) and stays(other / Cart::amount)
     }
+    + stays(set(Product::class) / Product::available)
   }
 }
 data class CheckOut(val c: KArg<Cart>): Machine {
@@ -38,12 +40,31 @@ data class CheckOut(val c: KArg<Cart>): Machine {
     + (current(c / Cart::status) `==` element<Status.Open>())
     + (next(c / Cart::status) `==` element<Status.CheckedOut>())
     + stays(c / Cart::amount)
-    + forAll("x" to set<Cart>() - c) { other ->
+    // things that stay the same
+    + forAll(set<Cart>() - c) { other ->
       stays(other / Cart::status) and stays(other / Cart::amount)
     }
+    + stays(set(Product::class) / Product::available)
   }
 }
 
+fun main() {
+  execute {
+    reflect(
+      Status::class, Status.Open::class, Status.CheckedOut::class,
+      Product::class, Cart::class
+    )
+    reflectMachine(Machine::class)
+
+    run(10, 5, 10) {
+      eventually {
+        forSome { c -> c / Cart::status `==` element<Status.CheckedOut>() }
+      }
+    }.visualize()
+  }
+}
+
+// OLD VERSION
 /*
 fun KModuleBuilder.productMachine() = stateMachine(skip = true) {
   initial {
@@ -69,20 +90,3 @@ fun KModuleBuilder.productMachine() = stateMachine(skip = true) {
   }
 }
 */
-
-fun main() {
-  execute {
-    reflect(
-      Status::class, Status.Open::class, Status.CheckedOut::class,
-      Product::class, Cart::class
-    )
-    // productMachine()
-    reflectMachine(Machine::class)
-
-    run(10, 5, 10) {
-      eventually {
-        forSome { c -> c / Cart::status `==` element<Status.CheckedOut>() }
-      }
-    }.visualize()
-  }
-}
