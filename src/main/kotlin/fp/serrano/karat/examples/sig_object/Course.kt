@@ -1,6 +1,7 @@
-package fp.serrano.karat.examples
+package fp.serrano.karat.examples.sig_object
 
 import fp.serrano.karat.*
+import fp.serrano.karat.ast.*
 import fp.serrano.karat.ui.visualize
 
 object Person: KSig<Person>("Person")

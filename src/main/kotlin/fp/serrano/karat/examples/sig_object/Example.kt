@@ -1,7 +1,15 @@
-package fp.serrano.karat.examples
+package fp.serrano.karat.examples.sig_object
 
 import edu.mit.csail.sdg.ast.Attr
 import fp.serrano.karat.*
+import fp.serrano.karat.ast.KSig
+import fp.serrano.karat.ast.div
+import fp.serrano.karat.ast.field
+import fp.serrano.karat.ast.`lone --# lone`
+import fp.serrano.karat.ast.no
+import fp.serrano.karat.ast.oneOf
+import fp.serrano.karat.ast.some
+import fp.serrano.karat.ast.someOf
 import fp.serrano.karat.ui.*
 
 // http://alloytools.org/documentation/code/ExampleUsingTheAPI.java.html

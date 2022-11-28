@@ -1,4 +1,4 @@
-package fp.serrano.karat
+package fp.serrano.karat.ast
 
 import edu.mit.csail.sdg.ast.ExprCall
 import edu.mit.csail.sdg.ast.Func

@@ -1,4 +1,4 @@
-package fp.serrano.karat
+package fp.serrano.karat.ast
 
 import edu.mit.csail.sdg.ast.ExprQt
 import kotlin.reflect.KProperty1
@@ -26,33 +26,3 @@ fun KModule.skip(): KFormula =
         }
       }
   }
-
-fun module(block: KModuleBuilder.() -> Unit): KModule =
-  KModuleBuilder().also(block).build()
-
-class KModuleBuilder {
-  val sigs: MutableList<KSig<*>> = mutableListOf()
-  val facts: MutableList<KFormula> = mutableListOf()
-
-  fun sigs(vararg newSigs: KSig<*>) {
-    sigs.addAll(newSigs)
-  }
-
-  fun fact(formula: KFormula) {
-    facts.add(formula)
-  }
-
-  fun fact(formula: () -> KFormula) {
-    facts.add(formula())
-  }
-
-  fun stateMachine(skip: Boolean, block: KTemporalFormulaBuilder.() -> Unit) =
-    fact {
-      temporal {
-        if (skip) skipTransition()
-        block()
-      }
-    }
-
-  fun build(): KModule = KModule(sigs.toList(), facts.toList())
-}

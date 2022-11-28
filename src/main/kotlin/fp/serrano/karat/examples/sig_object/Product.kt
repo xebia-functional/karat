@@ -1,8 +1,9 @@
-package fp.serrano.karat.examples
+package fp.serrano.karat.examples.sig_object
 
 import edu.mit.csail.sdg.ast.Attr
 import edu.mit.csail.sdg.ast.ExprQt
 import fp.serrano.karat.*
+import fp.serrano.karat.ast.*
 import fp.serrano.karat.ui.visualize
 
 // this is the actual definition

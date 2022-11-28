@@ -1,6 +1,7 @@
-package fp.serrano.karat
+package fp.serrano.karat.ast
 
 import edu.mit.csail.sdg.ast.ExprQt
+import fp.serrano.karat.ReflectedModule
 
 // temporal formulae
 
@@ -60,15 +61,15 @@ class KTemporalFormulaBuilder {
   private val transitions = mutableListOf<KFormula>()
   private val checks = mutableListOf<KFormula>()
 
-  fun initial(block: () -> KFormula): Unit {
+  fun initial(block: () -> KFormula) {
     initials.add(block())
   }
 
-  fun transition(block: () -> KFormula): Unit {
+  fun transition(block: () -> KFormula) {
     transitions.add(block())
   }
 
-  fun check(block: () -> KFormula): Unit {
+  fun check(block: () -> KFormula) {
     checks.add(block())
   }
 
@@ -77,12 +78,6 @@ class KTemporalFormulaBuilder {
 
   fun KModule.skipTransition(): Unit =
     transition { skip() }
-
-  fun KModuleBuilder.skipTransition(): Unit =
-    build().skipTransition()
-
-  fun Execute.skipTransition(): Unit =
-    transition { module.skip() }
 
   fun <A> transition(
     x: Pair<String, KSet<A>>,
@@ -97,6 +92,10 @@ class KTemporalFormulaBuilder {
   ): Unit = transition {
     `for`(ExprQt.Op.SOME, t1, fn)
   }
+
+  inline fun <reified A: Any> ReflectedModule.transition1(
+    fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
+  ): Unit = transition(set(A::class), fn)
 
   fun <A, B> transition(
     x: Pair<String, KSet<A>>,
@@ -113,4 +112,8 @@ class KTemporalFormulaBuilder {
   ): Unit = transition {
     `for`(ExprQt.Op.SOME, t1, t2, fn)
   }
+
+  inline fun <reified A: Any, reified B: Any> ReflectedModule.transition2(
+    fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
+  ): Unit = transition(set(A::class), set(B::class), fn)
 }

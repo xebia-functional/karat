@@ -1,4 +1,4 @@
-package fp.serrano.karat
+package fp.serrano.karat.ast
 
 import edu.mit.csail.sdg.alloy4.Pos
 import edu.mit.csail.sdg.ast.Decl

@@ -1,7 +1,6 @@
-package fp.serrano.karat
+package fp.serrano.karat.ast
 
 import edu.mit.csail.sdg.ast.Expr
-import fp.serrano.karat.examples.A
 
 // this represent a set of element, possibly with a multiplicity
 open class KSet<out A>(expr: Expr): KExpr<Set<A>>(expr)
@@ -21,7 +20,7 @@ fun <A> one(sr: KSet<A>): KFormula = KFormula(sr.expr.one())
 
 // basic set operations
 
-fun cardinality(sr: KSet<A>): KExpr<Int> =
+fun <A> cardinality(sr: KSet<A>): KExpr<Int> =
   KExpr(sr.expr.cardinality())
 
 operator fun <A> KSet<A>.plus(other: KSet<A>): KSet<A> =

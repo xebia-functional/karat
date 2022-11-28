@@ -1,8 +1,9 @@
-package fp.serrano.karat
+package fp.serrano.karat.ast
 
 import edu.mit.csail.sdg.ast.Expr
 import edu.mit.csail.sdg.ast.ExprConstant
 import edu.mit.csail.sdg.ast.ExprQt
+import fp.serrano.karat.ReflectedModule
 
 interface TFormula
 
@@ -35,7 +36,7 @@ fun paragraph(block: KParagraphBuilder.() -> Unit): KFormula =
 // basic boolean constructions
 
 object Constants {
-  val TRUE: KFormula  = KFormula(ExprConstant.TRUE)
+  val TRUE: KFormula = KFormula(ExprConstant.TRUE)
   val FALSE: KFormula = KFormula(ExprConstant.FALSE)
 }
 
@@ -85,6 +86,12 @@ fun <A> `for`(
   return KFormula(op.make(null, null, listOf(arg.decl), block(arg).expr))
 }
 
+inline fun <reified A: Any> ReflectedModule.`for`(
+  op: ExprQt.Op,
+  x: String,
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(op, x to set(A::class), block)
+
 fun <A> `for`(
   op: ExprQt.Op,
   t1: KSet<A>,
@@ -102,9 +109,84 @@ fun <A, B> `for`(
   return KFormula(op.make(null, null, listOf(arg1.decl, arg2.decl), block(arg1, arg2).expr))
 }
 
+inline fun <reified A: Any, reified B: Any> ReflectedModule.`for`(
+  op: ExprQt.Op,
+  x: String,
+  y: String,
+  noinline block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(op, x to set(A::class), y to set(B::class), block)
+
 fun <A, B> `for`(
   op: ExprQt.Op,
   t1: KSet<A>,
   t2: KSet<B>,
   fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
 ): KFormula = `for`(op, fn.parameters[0].name!! to t1, fn.parameters[1].name!! to t2, fn)
+
+// builder for all and some
+
+fun <A> forAll(
+  x: Pair<String, KSet<A>>,
+  block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ALL, x, block)
+
+inline fun <reified A: Any> ReflectedModule.forAll(
+  x: String,
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ALL, x, block)
+
+fun <A> forAll(
+  t1: KSet<A>,
+  fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
+): KFormula = `for`(ExprQt.Op.ALL, t1, fn)
+
+fun <A, B> forAll(
+  x: Pair<String, KSet<A>>,
+  y: Pair<String, KSet<B>>,
+  block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ALL, x, y, block)
+
+inline fun <reified A: Any, reified B: Any> ReflectedModule.forAll(
+  x: String,
+  y: String,
+  noinline block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ALL, x, y, block)
+
+fun <A, B> forAll(
+  t1: KSet<A>,
+  t2: KSet<B>,
+  fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
+): KFormula = `for`(ExprQt.Op.ALL, t1, t2, fn)
+
+fun <A> forSome(
+  x: Pair<String, KSet<A>>,
+  block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.SOME, x, block)
+
+inline fun <reified A: Any> ReflectedModule.forSome(
+  x: String,
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.SOME, x, block)
+
+fun <A> forSome(
+  t1: KSet<A>,
+  fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
+): KFormula = `for`(ExprQt.Op.SOME, t1, fn)
+
+fun <A, B> forSome(
+  x: Pair<String, KSet<A>>,
+  y: Pair<String, KSet<B>>,
+  block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.SOME, x, y, block)
+
+inline fun <reified A: Any, reified B: Any> ReflectedModule.forSome(
+  x: String,
+  y: String,
+  noinline block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.SOME, x, y, block)
+
+fun <A, B> forSome(
+  t1: KSet<A>,
+  t2: KSet<B>,
+  fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
+): KFormula = `for`(ExprQt.Op.SOME, t1, t2, fn)
