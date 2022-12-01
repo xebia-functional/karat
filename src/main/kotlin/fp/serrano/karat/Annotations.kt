@@ -7,6 +7,11 @@ import kotlin.reflect.KClass
 // - one represented 'one'
 @Target(AnnotationTarget.CLASS)
 annotation class abstract
+// the class represents a subset of other
+@Target(AnnotationTarget.CLASS)
+annotation class subset
+@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY)
+annotation class variable
 
 // indicates that a field should be reflected
 @Target(AnnotationTarget.PROPERTY)

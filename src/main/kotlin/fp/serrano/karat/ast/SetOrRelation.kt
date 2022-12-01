@@ -1,6 +1,8 @@
 package fp.serrano.karat.ast
 
 import edu.mit.csail.sdg.ast.Expr
+import fp.serrano.karat.ReflectedModule
+import kotlin.reflect.*
 
 // this represent a set of element, possibly with a multiplicity
 open class KSet<out A>(expr: Expr): KExpr<Set<A>>(expr)
@@ -53,8 +55,20 @@ fun <A, B> transpose(sr: KRelation<A, B>): KRelation<B, A> =
 fun <A> closure(sr: KRelation<A, A>): KRelation<A, A> =
   KRelation(sr.expr.closure())
 
+fun <A> ReflectedModule.closure(p: KProperty1<A, A>): KRelation<A, A> =
+  closure(field(p))
+
 fun <A> reflexiveClosure(sr: KRelation<A, A>): KRelation<A, A> =
   KRelation(sr.expr.reflexiveClosure())
+
+fun <A> reflexiveClosureOptional(sr: KRelation<A, A?>): KRelation<A, A> =
+  KRelation(sr.expr.reflexiveClosure())
+
+fun <A> ReflectedModule.reflexiveClosure(p: KProperty1<A, A>): KRelation<A, A> =
+  reflexiveClosure(field(p))
+
+fun <A> ReflectedModule.reflexiveClosureOptional(p: KProperty1<A, A?>): KRelation<A, A> =
+  reflexiveClosureOptional(field(p))
 
 // joins
 

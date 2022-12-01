@@ -13,7 +13,7 @@ open class KModuleBuilder: ReflectedModule {
   val sigs: MutableList<KSig<*>> = mutableListOf()
   val facts: MutableList<KFormula> = mutableListOf()
 
-  data class ReflectedSig<A>(val sig: KPrimSig<A>, val fields: MutableMap<KProperty1<*, *>, KField<*, *>> = mutableMapOf())
+  data class ReflectedSig<A>(val sig: KSig<A>, val fields: MutableMap<KProperty1<*, *>, KField<*, *>> = mutableMapOf())
   val reflectedSigs: MutableMap<KClass<*>, ReflectedSig<*>> = mutableMapOf()
 
   var unique: AtomicLong = AtomicLong(0L)
@@ -35,7 +35,7 @@ open class KModuleBuilder: ReflectedModule {
     sig(newSig)
   }
 
-  internal fun recordSig(klass: KClass<*>, newSig: KPrimSig<*>) {
+  internal fun recordSig(klass: KClass<*>, newSig: KSig<*>) {
     reflectedSigs[klass] = ReflectedSig(newSig)
     recordSig(newSig)
   }
@@ -49,17 +49,21 @@ open class KModuleBuilder: ReflectedModule {
       // a. find the attributes
       val attribs = listOfNotNull(
         (Attr.ABSTRACT)?.takeIf { klass.hasAnnotation<abstract>() },
-        (Attr.ONE)?.takeIf { klass.hasAnnotation<one>() || klass.objectInstance != null }
+        (Attr.ONE)?.takeIf { klass.hasAnnotation<one>() || klass.objectInstance != null },
+        (Attr.VARIABLE)?.takeIf { klass.hasAnnotation<variable>() }
       )
+      val isSubset = klass.hasAnnotation<subset>()
       // b. find any possible super-class
       //    rule for now: superclasses must be reflected before
       val superSig = klass.supertypes.firstNotNullOfOrNull { ty ->
         (ty.classifier as? KClass<*>)?.let { reflectedSigs[it]?.sig }
       }
       // c. generate the thing
-      val newSig = when (superSig) {
-        null -> KPrimSig(klass, klass.simpleName!!, *attribs.toTypedArray())
-        else -> KPrimSig(klass, klass.simpleName!!, superSig, *attribs.toTypedArray())
+      val newSig = when {
+        isSubset -> KSubsetSig(klass, klass.simpleName!!, superSig!!, *attribs.toTypedArray())
+        superSig == null -> KPrimSig(klass, klass.simpleName!!, *attribs.toTypedArray())
+        superSig is KPrimSig<*> -> KPrimSig(klass, klass.simpleName!!, superSig, *attribs.toTypedArray())
+        else -> throw IllegalArgumentException("non-subset signatures must extend a non-subset one")
       }
       // d. record it
       recordSig(klass, newSig)
@@ -95,7 +99,7 @@ open class KModuleBuilder: ReflectedModule {
             null -> throw IllegalArgumentException("cannot reflect type $ret")
             else -> {
               val newProp =
-                if (property is KMutableProperty1)
+                if (property is KMutableProperty1 || property.hasAnnotation<variable>())
                   k.sig.variable(property.name, sigTy)
                 else
                   k.sig.field(property.name, sigTy)

@@ -40,6 +40,11 @@ open class KPrimSig<out A>(val primSig: PrimSig): KSig<A>(primSig) {
 open class KSubsetSig<out A>(subsetSig: SubsetSig): KSig<A>(subsetSig) {
   constructor(name: String, of: KSig<*>, vararg attributes: Attr)
           : this(SubsetSig(name, listOf(of.sig), *attributes))
+
+  companion object {
+    operator fun <A: Any> invoke(klass: KClass<A>, name: String, of: KSig<*>, vararg attributes: Attr): KSubsetSig<A> =
+      KSubsetSig(name, of, *attributes)
+  }
 }
 
 class KField<A, F>(field: Field): KRelation<A, F>(field)

@@ -27,6 +27,12 @@ fun eventually(formula: KFormula): KFormula =
 fun eventually(formula: () -> KFormula): KFormula =
   eventually(formula())
 
+fun historically(formula: KFormula): KFormula =
+  KFormula(formula.expr.historically())
+
+fun historically(formula: () -> KFormula): KFormula =
+  historically(formula())
+
 fun before(formula: KFormula): KFormula =
   KFormula(formula.expr.before())
 
