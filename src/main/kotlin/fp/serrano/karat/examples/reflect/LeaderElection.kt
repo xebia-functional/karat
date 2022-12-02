@@ -22,8 +22,9 @@ interface Id {
 val first: Id by model
 val last: Id by model
 
-fun ReflectedModule.gt(one: KSet<Id>, other: KSet<Id>): KFormula =
-  one `in` (other / closureOptional(Id::next))
+context(ReflectedModule)
+infix fun KSet<Id>.gt(other: KSet<Id>): KFormula =
+  this `in` (other / closureOptional(Id::next))
 
 sealed interface Transition: StateMachine
 
@@ -71,7 +72,7 @@ data class Read(val n: KArg<Node>, val i: KArg<Id>): Transition {
     + ( next(n / Node::inbox) `==` current(n / Node::inbox) - i )
     + forAll(set<Node>() - n) { m -> stays(m / Node::inbox) }
 
-    + gt(i, n / Node::id).ifThen(
+    + (i gt n / Node::id).ifThen(
       ifTrue  = next(n / Node::outbox) `==` current(n / Node::outbox) + i,
       ifFalse = stays(n / Node::outbox)
     )
