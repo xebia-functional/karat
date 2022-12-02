@@ -37,19 +37,6 @@ sealed interface Transition: StateMachine
   }
 }
 
-/*
-pred initiate[n : Node] {
-  // node n initiates the protocol
-
-  historically n.id not in n.outbox          // guard
-
-  n.outbox' = n.outbox + n.id                // effect on n.outbox
-  all m : Node - n | m.outbox' = m.outbox    // effect on the outboxes of other nodes
-
-  inbox'   = inbox                           // frame condition on inbox
-  Elected' = Elected                         // frame condition on Elected
-}
-*/
 data class Initiate(val n: KArg<Node>): Transition {
   override fun ReflectedModule.execute(): KFormula = and {
     + historically { not(n / Node::id `in` n / Node::outbox) }
@@ -64,21 +51,6 @@ data class Initiate(val n: KArg<Node>): Transition {
   }
 }
 
-/*
-pred send[n : Node, i : Id] {
-  // i is sent from node n to its successor
-
-  i in n.outbox                              // guard
-
-  n.outbox' = n.outbox - i                   // effect on n.outbox
-  all m : Node - n | m.outbox' = m.outbox    // effect on the outboxes of other nodes
-
-  n.succ.inbox' = n.succ.inbox + i           // effect on n.succ.inbox
-  all m : Node - n.succ | m.inbox' = m.inbox // effect on the inboxes of other nodes
-
-  Elected' = Elected                         // frame condition on Elected
-}
-*/
 data class Send(val n: KArg<Node>, val i: KArg<Id>): Transition {
   override fun ReflectedModule.execute(): KFormula = and {
     + (i `in` current(n / Node::outbox))
@@ -93,23 +65,6 @@ data class Send(val n: KArg<Node>, val i: KArg<Id>): Transition {
   }
 }
 
-/*
-pred process[n : Node, i : Id] {
-  // i is read and processed by node n
-
-  i in n.inbox                                // guard
-
-  n.inbox' = n.inbox - i                      // effect on n.inbox
-  all m : Node - n | m.inbox' = m.inbox       // effect on the inboxes of other nodes
-
-  gt[i,n.id] implies n.outbox' = n.outbox + i // effect on n.outbox
-             else    n.outbox' = n.outbox
-  all m : Node - n | m.outbox' = m.outbox     // effect on the outboxes of other nodes
-
-  i = n.id implies Elected' = Elected + n     // effect on Elected
-           else Elected' = Elected
-  }
- */
 data class Read(val n: KArg<Node>, val i: KArg<Id>): Transition {
   override fun ReflectedModule.execute(): KFormula = and {
     + (i `in` n / Node::inbox)
