@@ -3,9 +3,16 @@ package fp.serrano.karat
 import fp.serrano.karat.ast.*
 import kotlin.reflect.*
 
+object model {
+  operator fun <A> getValue(thisRef: Nothing?, property: KProperty<*>): A =
+    throw IllegalStateException("this should never be de-referenced")
+  operator fun <A> setValue(thisRef: Nothing?, property: KProperty<*>, value: A) { }
+}
+
 interface ReflectedModule {
   fun <A: Any> set(klass: KClass<A>): KSig<A>
   fun <A, F> field(property: KProperty1<A, F>): KField<A, F>
+  fun <F> global(property: KProperty0<F>): KSet<F>
 
   operator fun <A, B> KSet<A>.div(other: KProperty1<A, B>): KSet<B> =
     this / field(other)

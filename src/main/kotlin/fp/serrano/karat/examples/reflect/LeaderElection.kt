@@ -7,23 +7,23 @@ import fp.serrano.karat.ui.visualize
 // based on https://haslab.github.io/formal-software-design/protocol-design/index.html
 
 interface Node {
-  @reflect val succ: Node
-  @reflect val id: Id
-  @reflect var inbox: Set<Id>
-  @reflect var outbox: Set<Id>
+  val succ: Node
+  val id: Id
+  var inbox: Set<Id>
+  var outbox: Set<Id>
 }
 
-@variable @subset interface Elected: Node
+var Elected: Set<Node> by model
 
 interface Id {
-  @reflect val next: Id?
+  val next: Id?
 }
+
+val first: Id by model
+val last: Id by model
 
 fun ReflectedModule.gt(one: KSet<Id>, other: KSet<Id>): KFormula =
   one `in` (other / closureOptional(Id::next))
-
-@element interface first: Id
-@element interface last: Id
 
 sealed interface Transition: StateMachine
 
@@ -33,21 +33,20 @@ sealed interface Transition: StateMachine
     + no(field(Node::inbox))
     + no(field(Node::outbox))
     // initially there are no elected nodes
-    + no(set<Elected>())
+    + no(global(::Elected))
   }
 }
 
 data class Initiate(val n: KArg<Node>): Transition {
   override fun ReflectedModule.execute(): KFormula = and {
     + historically { not(n / Node::id `in` n / Node::outbox) }
-    + (n / Node::id `==` element<last>())
     // effect on n.outbox
     + ( next(n / Node::outbox) `==` current(n / Node::outbox) + n / Node::id )
     // effect on the outboxes of other nodes
     + forAll(set<Node>() - n) { m -> stays(m / Node::outbox) }
 
     + stays(field(Node::inbox))  // frame condition on inbox
-    + stays(set<Elected>())      // frame condition on Elected
+    + stays(global(::Elected))      // frame condition on Elected
   }
 }
 
@@ -61,7 +60,7 @@ data class Send(val n: KArg<Node>, val i: KArg<Id>): Transition {
     + ( next((n / Node::succ) / Node::inbox) `==` (current((n / Node::succ) / Node::inbox) + i) )
     + forAll(set<Node>() - (n / Node::succ)) { m -> stays(m / Node::inbox) }
 
-    + stays(set<Elected>())
+    + stays(global(::Elected))
   }
 }
 
@@ -79,22 +78,23 @@ data class Read(val n: KArg<Node>, val i: KArg<Id>): Transition {
     + forAll(set<Node>() - n) { m -> stays(m / Node::outbox) }
 
     + (i `==` n / Node::id).ifThen(
-      ifTrue = next(set<Elected>()) `==` current(set<Elected>()) + n,
-      ifFalse = stays(set<Elected>())
+      ifTrue = next(global(::Elected)) `==` current(global(::Elected)) + n,
+      ifFalse = stays(global(::Elected))
     )
   }
 }
 
 fun main() {
   execute {
-    reflect(Node::class, Elected::class, Id::class, first::class, last::class)
+    reflect(reflectAll = true, Node::class, Id::class)
+    reflectGlobal(::Elected, ::first, ::last)
 
     fact {
       forAll { n -> set<Node>() `in` n / closure(Node::succ) }
     }
 
-    fact { no (element<last>() / Id::next) }
-    fact { set<Id>() `in` element<first>() / reflexiveClosureOptional(Id::next) }
+    fact { no (global(::last) / Id::next) }
+    fact { set<Id>() `in` global(::first) / reflexiveClosureOptional(Id::next) }
 
     fact {
       forAll { i -> lone(Node::id / i) }
@@ -104,7 +104,7 @@ fun main() {
 
     // find a trace which satisfies the formula
     run(overall = 30, bitwidth = 10, scopes = listOf(exactly<Node>(3), exactly<Id>(3))) {
-      eventually { some(set<Elected>()) }
+      eventually { some(global(::Elected)) }
     }.visualize()
 
     // try to find a counterexample

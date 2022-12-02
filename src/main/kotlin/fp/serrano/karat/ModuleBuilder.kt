@@ -15,6 +15,7 @@ open class KModuleBuilder: ReflectedModule {
 
   data class ReflectedSig<A>(val sig: KSig<A>, val fields: MutableMap<KProperty1<*, *>, KField<*, *>> = mutableMapOf())
   val reflectedSigs: MutableMap<KClass<*>, ReflectedSig<*>> = mutableMapOf()
+  val reflectedGlobals: MutableMap<KProperty0<*>, KSig<*>> = mutableMapOf()
 
   var unique: AtomicLong = AtomicLong(0L)
 
@@ -37,6 +38,11 @@ open class KModuleBuilder: ReflectedModule {
 
   internal fun recordSig(klass: KClass<*>, newSig: KSig<*>) {
     reflectedSigs[klass] = ReflectedSig(newSig)
+    recordSig(newSig)
+  }
+
+  internal fun recordGlobal(prop: KProperty0<*>, newSig: KSig<*>) {
+    reflectedGlobals[prop] = newSig
     recordSig(newSig)
   }
 
@@ -132,6 +138,41 @@ open class KModuleBuilder: ReflectedModule {
     }
   }
 
+  fun reflectGlobal(vararg properties: KProperty0<*>) {
+    properties.forEach { property ->
+      val ret = property.returnType
+      val ty = ret.classifier as? KClass<*>
+      val sigTy: Pair<List<Attr>, KSig<*>>? = when {
+        property.returnType.isMarkedNullable ->
+          findSet(ty)?.let { listOf(Attr.LONE) to it }
+
+        ty?.isSubclassOf(Set::class) == true ->
+          findSet(ret.arguments.firstOrNull()?.type?.classifier as? KClass<*>)?.let {
+            when {
+              property.hasAnnotation<lone>() -> listOf(Attr.LONE) to it
+              property.hasAnnotation<one>() -> listOf(Attr.ONE) to it
+              property.hasAnnotation<some>() -> emptyList<Attr>() to it
+              else -> emptyList<Attr>() to it
+            }
+          }
+
+        else ->
+          findSet(ty)?.let { listOf(Attr.ONE) to it }
+      }
+      when (sigTy) {
+        null -> throw IllegalArgumentException("cannot reflect type $ret")
+        else -> {
+          val newProp =
+            if (property is KMutableProperty0 || property.hasAnnotation<variable>())
+              KSubsetSig<Nothing>(property.name, sigTy.second, *(listOf(Attr.VARIABLE) + sigTy.first).toTypedArray())
+            else
+              KSubsetSig<Nothing>(property.name, sigTy.second, *sigTy.first.toTypedArray())
+          recordGlobal(property, newProp)
+        }
+      }
+    }
+  }
+
   override fun <A : Any> set(klass: KClass<A>): KSig<A> =
     findSet(klass)!!
 
@@ -146,7 +187,11 @@ open class KModuleBuilder: ReflectedModule {
 
   @Suppress("UNCHECKED_CAST")
   override fun <A, F> field(property: KProperty1<A, F>): KField<A, F> =
-    (reflectedSigs[property.instanceParameter?.type?.classifier as KClass<*>]!!.fields[property]!!) as KField<A, F>
+    reflectedSigs[property.instanceParameter?.type?.classifier as KClass<*>]!!.fields[property]!! as KField<A, F>
+
+  @Suppress("UNCHECKED_CAST")
+  override fun <F> global(property: KProperty0<F>): KSet<F> =
+    reflectedGlobals[property]!! as KSet<F>
 
   fun fact(formula: KFormula) {
     facts.add(formula)
