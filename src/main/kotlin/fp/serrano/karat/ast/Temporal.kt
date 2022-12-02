@@ -79,8 +79,11 @@ class KTemporalFormulaBuilder {
     checks.add(block())
   }
 
-  fun build(): KFormula =
-    and(initials) and always(or(transitions)) and and(checks)
+  fun build(): KFormula = and {
+    + and(initials)
+    + always(or(transitions))
+    + and(checks)
+  }
 
   fun KModule.skipTransition(): Unit =
     transition { skip() }

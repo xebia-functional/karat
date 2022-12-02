@@ -1,7 +1,10 @@
 package fp.serrano.karat.ast
 
+import edu.mit.csail.sdg.alloy4.Pos
 import edu.mit.csail.sdg.ast.Expr
 import edu.mit.csail.sdg.ast.ExprConstant
+import edu.mit.csail.sdg.ast.ExprITE
+import edu.mit.csail.sdg.ast.ExprList
 import edu.mit.csail.sdg.ast.ExprQt
 import fp.serrano.karat.ReflectedModule
 
@@ -47,19 +50,13 @@ infix fun KFormula.or(other: KFormula): KFormula =
   KFormula(this.expr.or(other.expr))
 
 fun or(formulae: Collection<KFormula>): KFormula =
-  when {
-    formulae.isEmpty() -> Constants.FALSE
-    else -> formulae.reduce { acc, f -> acc.or(f) }
-  }
+  KFormula(ExprList.make(Pos.UNKNOWN, Pos.UNKNOWN, ExprList.Op.OR, formulae.map { it.expr }))
 
 infix fun KFormula.and(other: KFormula): KFormula =
   KFormula(this.expr.and(other.expr))
 
 fun and(formulae: Collection<KFormula>): KFormula =
-  when {
-    formulae.isEmpty() -> Constants.TRUE
-    else -> formulae.reduce { acc, f -> acc.and(f) }
-  }
+  KFormula(ExprList.make(Pos.UNKNOWN, Pos.UNKNOWN, ExprList.Op.AND, formulae.map { it.expr }))
 
 fun and(block: KParagraphBuilder.() -> Unit): KFormula =
   paragraph(block)
@@ -69,6 +66,9 @@ infix fun KFormula.iff(other: KFormula): KFormula =
 
 infix fun KFormula.implies(other: KFormula): KFormula =
   KFormula(this.expr.implies(other.expr))
+
+fun KFormula.ifThen(ifTrue: KFormula, ifFalse: KFormula): KFormula =
+  KFormula(ExprITE.make(Pos.UNKNOWN, this.expr, ifTrue.expr, ifFalse.expr))
 
 // comparisons
 

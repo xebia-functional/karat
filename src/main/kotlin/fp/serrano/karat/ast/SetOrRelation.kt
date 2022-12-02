@@ -55,8 +55,14 @@ fun <A, B> transpose(sr: KRelation<A, B>): KRelation<B, A> =
 fun <A> closure(sr: KRelation<A, A>): KRelation<A, A> =
   KRelation(sr.expr.closure())
 
+fun <A> closureOptional(sr: KRelation<A, A?>): KRelation<A, A> =
+  KRelation(sr.expr.closure())
+
 fun <A> ReflectedModule.closure(p: KProperty1<A, A>): KRelation<A, A> =
   closure(field(p))
+
+fun <A> ReflectedModule.closureOptional(p: KProperty1<A, A?>): KRelation<A, A> =
+  closureOptional(field(p))
 
 fun <A> reflexiveClosure(sr: KRelation<A, A>): KRelation<A, A> =
   KRelation(sr.expr.reflexiveClosure())

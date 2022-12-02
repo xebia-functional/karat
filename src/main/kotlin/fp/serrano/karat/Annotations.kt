@@ -1,7 +1,5 @@
 package fp.serrano.karat
 
-import kotlin.reflect.KClass
-
 // for classes
 // - abstract represents 'abstract'
 // - one represented 'one'
@@ -10,6 +8,9 @@ annotation class abstract
 // the class represents a subset of other
 @Target(AnnotationTarget.CLASS)
 annotation class subset
+// the class represents one element of other
+@Target(AnnotationTarget.CLASS)
+annotation class element
 @Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY)
 annotation class variable
 
@@ -31,4 +32,4 @@ annotation class one
 annotation class some
 
 @Target(AnnotationTarget.CLASS)
-annotation class initial()
+annotation class initial

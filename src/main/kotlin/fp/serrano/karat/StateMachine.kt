@@ -3,7 +3,6 @@ package fp.serrano.karat
 import edu.mit.csail.sdg.ast.Attr
 import fp.serrano.karat.ast.*
 import kotlin.reflect.KClass
-import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
@@ -19,8 +18,9 @@ fun <A: StateMachine> KModuleBuilder.reflectMachine(
   transitionSigName: String = "Transition",
   skipName: String = "Skip"
 ) = stateMachine(skip = false) {
-  if (!klass.java.isInterface || !klass.isSealed || klass.declaredMembers.isNotEmpty())
-    throw IllegalArgumentException("only empty sealed interfaces may bed turned into state machines")
+  require(klass.java.isInterface && klass.isSealed && klass.declaredMembers.isEmpty()) {
+    "only empty sealed interfaces may bed turned into state machines"
+  }
 
   val skipFormula = this@reflectMachine.build().skip()
 
@@ -29,7 +29,7 @@ fun <A: StateMachine> KModuleBuilder.reflectMachine(
   recordSig(klass, newSig)
 
   // 2. declare a single element to hold the current transition
-  val stateSig = KSubsetSig<Nothing>(transitionSigName, newSig, Attr.ONE, Attr.VARIABLE)
+  val stateSig = KSubsetSig(klass, transitionSigName, newSig, Attr.ONE, Attr.VARIABLE)
   recordSig(stateSig)
   val currentStateRef = stateSig
 
@@ -46,9 +46,9 @@ fun <A: StateMachine> KModuleBuilder.reflectMachine(
   klass.sealedSubclasses.forEach { transitionKlass ->
     val transitionSig =
       if (transitionKlass.objectInstance == null)
-        KPrimSig(transitionKlass, transitionKlass.simpleName!!, extends = newSig, Attr.ONE)
-      else
         KPrimSig(transitionKlass, transitionKlass.simpleName!!, extends = newSig)
+      else
+        KPrimSig(transitionKlass, transitionKlass.simpleName!!, extends = newSig, Attr.ONE)
     recordSig(transitionKlass, transitionSig)
 
     if (transitionKlass.hasAnnotation<initial>()) {
@@ -56,27 +56,29 @@ fun <A: StateMachine> KModuleBuilder.reflectMachine(
       when (val o = transitionKlass.objectInstance) {
         null -> throw IllegalArgumentException("the initial transition must be an object")
         else -> initial {
-          with(o) { execute() } and (currentStateRef `==` set(transitionKlass))
+          with(o) { execute() }
         }
       }
     } else {
       // if not, we need to declare the properties
-      val properties = transitionKlass.declaredMemberProperties.map { property ->
-        val ret = property.returnType
+      val properties = transitionKlass.primaryConstructor!!.parameters.map { property ->
+        val ret = property.type
         val ty = ret.classifier as? KClass<*>
-        if (ty?.isSubclassOf(KArg::class) != true)
-          throw IllegalArgumentException("all arguments must be KArg")
+        require(ty?.isSubclassOf(KArg::class) == true) {
+          "all arguments must be KArg"
+        }
 
         val sig =
           findSet(ret.arguments.firstOrNull()?.type?.classifier as? KClass<*>)
             ?: throw IllegalArgumentException("cannot reflect type $ret")
 
-        val field = transitionSig.field(property.name, sig)
-        PropInfo(property.name, field, sig)
+        val field = transitionSig.field(property.name!!, sig)
+        PropInfo(property.name!!, field, sig)
       }
       // and then generate the transition
+      val inner = innerForSome(properties, transitionKlass, currentStateRef)
       transition {
-        next(currentStateRef) `in` set(transitionKlass) and innerForSome(properties, transitionKlass, currentStateRef)
+        inner and (currentStateRef `in` set(transitionKlass))
       }
     }
   }
@@ -92,7 +94,7 @@ fun KModuleBuilder.innerForSome(elements: List<PropInfo>, klass: KClass<*>, curr
     } else {
       val e = remainingElements.first()
       forSome(e.name to e.sig) { arg ->
-        worker(remainingElements.drop(1), acc + listOf(arg)) and (next(currentStateRef) / e.field `==` arg)
+        worker(remainingElements.drop(1), acc + listOf(arg)) and (currentStateRef / e.field `==` arg)
       }
     }
 

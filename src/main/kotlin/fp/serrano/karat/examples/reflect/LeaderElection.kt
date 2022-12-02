@@ -19,8 +19,11 @@ interface Id {
   @reflect val next: Id?
 }
 
-@one @subset interface first: Id
-@one @subset interface last: Id
+fun ReflectedModule.gt(one: KSet<Id>, other: KSet<Id>): KFormula =
+  one `in` (other / closureOptional(Id::next))
+
+@element interface first: Id
+@element interface last: Id
 
 sealed interface Transition: StateMachine
 
@@ -50,6 +53,7 @@ pred initiate[n : Node] {
 data class Initiate(val n: KArg<Node>): Transition {
   override fun ReflectedModule.execute(): KFormula = and {
     + historically { not(n / Node::id `in` n / Node::outbox) }
+    + (n / Node::id `==` element<last>())
     // effect on n.outbox
     + ( next(n / Node::outbox) `==` current(n / Node::outbox) + n / Node::id )
     // effect on the outboxes of other nodes
@@ -77,13 +81,13 @@ pred send[n : Node, i : Id] {
 */
 data class Send(val n: KArg<Node>, val i: KArg<Id>): Transition {
   override fun ReflectedModule.execute(): KFormula = and {
-    + (i `in` n / Node::outbox)
+    + (i `in` current(n / Node::outbox))
 
-    + ( next(n / Node::outbox) `==` current(n / Node::outbox) - n / Node::id )
+    + ( next(n / Node::outbox) `==` current(n / Node::outbox) - i )
     + forAll(set<Node>() - n) { m -> stays(m / Node::outbox) }
 
-    + ( next(n / Node::succ / Node::inbox) `==` current(n / Node::succ / Node::inbox) + i )
-    + forAll(set<Node>() - n / Node::succ) { m -> stays(m / Node::inbox) }
+    + ( next((n / Node::succ) / Node::inbox) `==` (current((n / Node::succ) / Node::inbox) + i) )
+    + forAll(set<Node>() - (n / Node::succ)) { m -> stays(m / Node::inbox) }
 
     + stays(set<Elected>())
   }
@@ -106,21 +110,25 @@ pred process[n : Node, i : Id] {
            else Elected' = Elected
   }
  */
-/*
-data class Process(val n: KArg<Node>, val i: KArg<Id>): Transition {
+data class Read(val n: KArg<Node>, val i: KArg<Id>): Transition {
   override fun ReflectedModule.execute(): KFormula = and {
     + (i `in` n / Node::inbox)
 
     + ( next(n / Node::inbox) `==` current(n / Node::inbox) - i )
     + forAll(set<Node>() - n) { m -> stays(m / Node::inbox) }
 
-    // + ( next(n / Node::succ / Node::inbox) `==` current(n / Node::succ / Node::inbox) + i )
+    + gt(i, n / Node::id).ifThen(
+      ifTrue  = next(n / Node::outbox) `==` current(n / Node::outbox) + i,
+      ifFalse = stays(n / Node::outbox)
+    )
     + forAll(set<Node>() - n) { m -> stays(m / Node::outbox) }
 
-    // + stays(set<Elected>())
+    + (i `==` n / Node::id).ifThen(
+      ifTrue = next(set<Elected>()) `==` current(set<Elected>()) + n,
+      ifFalse = stays(set<Elected>())
+    )
   }
 }
-*/
 
 fun main() {
   execute {
@@ -130,18 +138,24 @@ fun main() {
       forAll { n -> set<Node>() `in` n / closure(Node::succ) }
     }
 
-    fact { some(set<Node>()) }
-    fact { forAll { n -> not(n / Node::succ `==` n) } }
-
-    fact { no (set<last>() / Id::next) }
-    fact { set<Id>() `in` set<first>() / reflexiveClosureOptional(Id::next) }
+    fact { no (element<last>() / Id::next) }
+    fact { set<Id>() `in` element<first>() / reflexiveClosureOptional(Id::next) }
 
     fact {
       forAll { i -> lone(Node::id / i) }
     }
 
-    reflectMachine(Transition::class, skipName = "Stutter")
+    reflectMachine(Transition::class, transitionSigName = "Event", skipName = "Stutter")
 
-    run(4, 4, 4) { Constants.TRUE }.visualize()
+    // find a trace which satisfies the formula
+    run(overall = 30, bitwidth = 10, scopes = listOf(exactly<Node>(3), exactly<Id>(3))) {
+      eventually { some(set<Elected>()) }
+    }.visualize()
+
+    // try to find a counterexample
+    // check(overall = 4, steps = 1 .. 20) {
+    //   eventually { some(set<Elected>()) }
+    // }.visualize()
+
   }
 }

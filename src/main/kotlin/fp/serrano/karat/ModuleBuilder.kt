@@ -49,10 +49,10 @@ open class KModuleBuilder: ReflectedModule {
       // a. find the attributes
       val attribs = listOfNotNull(
         (Attr.ABSTRACT)?.takeIf { klass.hasAnnotation<abstract>() },
-        (Attr.ONE)?.takeIf { klass.hasAnnotation<one>() || klass.objectInstance != null },
+        (Attr.ONE)?.takeIf { klass.hasAnnotation<one>() || klass.hasAnnotation<element>() || klass.objectInstance != null },
         (Attr.VARIABLE)?.takeIf { klass.hasAnnotation<variable>() }
       )
-      val isSubset = klass.hasAnnotation<subset>()
+      val isSubset = klass.hasAnnotation<subset>() || klass.hasAnnotation<element>()
       // b. find any possible super-class
       //    rule for now: superclasses must be reflected before
       val superSig = klass.supertypes.firstNotNullOfOrNull { ty ->
