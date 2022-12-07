@@ -14,6 +14,8 @@ open class KRelation<out A, out B>(expr: Expr): KSet<Pair<A, B>>(expr)
 
 fun <A> no(sr: KSet<A>): KFormula = KFormula(sr.expr.no())
 
+fun <A> empty(sr: KSet<A>): KFormula = no(sr)
+
 fun <A> some(sr: KSet<A>): KFormula = KFormula(sr.expr.some())
 
 fun <A> lone(sr: KSet<A>): KFormula = KFormula(sr.expr.lone())

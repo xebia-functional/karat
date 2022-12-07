@@ -37,6 +37,19 @@ fun <A: Any> ReflectedModule.setOf(klass: KClass<A>): KSet<A> = setOf(set(klass)
 inline fun <reified A: Any> ReflectedModule.set(): KSig<A> = set(A::class)
 inline fun <reified A: Any> ReflectedModule.element(): KSig<A> = set(A::class)
 
+inline fun <reified A: Any> ReflectedModule.empty(): KFormula = empty(set<A>())
+fun <A, F> ReflectedModule.empty(property: KProperty1<A, F>): KFormula = empty(field(property))
+fun <F> ReflectedModule.empty(property: KProperty0<F>): KFormula = empty(global(property))
+
+fun <A, F> ReflectedModule.next(property: KProperty1<A, F>): KSet<Pair<A, F>> = next(field(property))
+fun <F> ReflectedModule.next(property: KProperty0<F>): KSet<F> = next(global(property))
+
+fun <A, F> ReflectedModule.current(property: KProperty1<A, F>): KSet<Pair<A, F>> = current(field(property))
+fun <F> ReflectedModule.current(property: KProperty0<F>): KSet<F> = current(global(property))
+
+fun <A, F> ReflectedModule.stays(property: KProperty1<A, F>): KFormula = stays(field(property))
+fun <F> ReflectedModule.stays(property: KProperty0<F>): KFormula = stays(global(property))
+
 // indicates a global fact
 interface Fact: ReflectedModule
 // indicates a fact which applies to each instance of the class

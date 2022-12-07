@@ -41,10 +41,10 @@ sealed interface Transition: StateMachine
 @initial object Empty: Transition {
   override fun ReflectedModule.execute(): KFormula = and {
     // initially inbox and outbox are empty
-    + no(field(Node::inbox))
-    + no(field(Node::outbox))
+    + empty(Node::inbox)
+    + empty(Node::outbox)
     // initially there are no elected nodes
-    + no(global(Node::Elected))
+    + empty(Node::Elected)
   }
 }
 
@@ -56,8 +56,8 @@ data class Initiate(val n: KArg<Node>): Transition {
     // effect on the outboxes of other nodes
     + forAll(set<Node>() - n) { m -> stays(m / Node::outbox) }
 
-    + stays(field(Node::inbox))    // frame condition on inbox
-    + stays(global(Node::Elected)) // frame condition on Elected
+    + stays(Node::inbox)   // frame condition on inbox
+    + stays(Node::Elected) // frame condition on Elected
   }
 }
 
@@ -71,13 +71,13 @@ data class Send(val n: KArg<Node>, val i: KArg<Id>): Transition {
     + ( next((n / Node::succ) / Node::inbox) `==` (current((n / Node::succ) / Node::inbox) + i) )
     + forAll(set<Node>() - (n / Node::succ)) { m -> stays(m / Node::inbox) }
 
-    + stays(global(Node::Elected))
+    + stays(Node::Elected)
   }
 }
 
 data class Read(val n: KArg<Node>, val i: KArg<Id>): Transition {
   override fun ReflectedModule.execute(): KFormula = and {
-    + (i `in` n / Node::inbox)
+    + (i `in` current(n / Node::inbox))
 
     + ( next(n / Node::inbox) `==` current(n / Node::inbox) - i )
     + forAll(set<Node>() - n) { m -> stays(m / Node::inbox) }
@@ -89,8 +89,8 @@ data class Read(val n: KArg<Node>, val i: KArg<Id>): Transition {
     + forAll(set<Node>() - n) { m -> stays(m / Node::outbox) }
 
     + (i `==` n / Node::id).ifThen(
-      ifTrue = next(global(Node::Elected)) `==` current(global(Node::Elected)) + n,
-      ifFalse = stays(global(Node::Elected))
+      ifTrue = next(Node::Elected) `==` current(Node::Elected) + n,
+      ifFalse = stays(Node::Elected)
     )
   }
 }
