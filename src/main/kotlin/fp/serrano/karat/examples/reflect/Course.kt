@@ -14,7 +14,7 @@ data class Course(
   @reflect val students: Set<Person>
 ) {
   companion object {
-    fun Fact<Course>.teacherIsNotAStudent(): KFormula =
+    fun InstanceFact<Course>.teacherIsNotAStudent(): KFormula =
       no ( (self / Course::teacher) `&` (self / Course::students))
   }
 }

@@ -4,9 +4,9 @@ import fp.serrano.karat.ast.*
 import kotlin.reflect.*
 
 object model {
-  operator fun <A> getValue(thisRef: Nothing?, property: KProperty<*>): A =
+  operator fun <S, A> getValue(thisRef: S, property: KProperty<*>): A =
     throw IllegalStateException("this should never be de-referenced")
-  operator fun <A> setValue(thisRef: Nothing?, property: KProperty<*>, value: A) { }
+  operator fun <S, A> setValue(thisRef: S, property: KProperty<*>, value: A) { }
 }
 
 interface ReflectedModule {
@@ -37,6 +37,9 @@ fun <A: Any> ReflectedModule.setOf(klass: KClass<A>): KSet<A> = setOf(set(klass)
 inline fun <reified A: Any> ReflectedModule.set(): KSig<A> = set(A::class)
 inline fun <reified A: Any> ReflectedModule.element(): KSig<A> = set(A::class)
 
-interface Fact<A>: ReflectedModule {
+// indicates a global fact
+interface Fact: ReflectedModule
+// indicates a fact which applies to each instance of the class
+interface InstanceFact<A>: ReflectedModule {
   val self: KThis<A>
 }

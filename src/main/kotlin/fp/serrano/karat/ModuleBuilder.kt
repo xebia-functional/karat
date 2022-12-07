@@ -5,6 +5,7 @@ import fp.serrano.karat.ast.*
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.reflect.*
 import kotlin.reflect.full.*
+import kotlin.reflect.jvm.*
 
 fun module(block: KModuleBuilder.() -> Unit): KModule =
   KModuleBuilder().also(block).build()
@@ -15,7 +16,7 @@ open class KModuleBuilder: ReflectedModule {
 
   data class ReflectedSig<A>(val sig: KSig<A>, val fields: MutableMap<KProperty1<*, *>, KField<*, *>> = mutableMapOf())
   val reflectedSigs: MutableMap<KClass<*>, ReflectedSig<*>> = mutableMapOf()
-  val reflectedGlobals: MutableMap<KProperty0<*>, KSig<*>> = mutableMapOf()
+  val reflectedGlobals: MutableMap<KProperty<*>, KSig<*>> = mutableMapOf()
 
   var unique: AtomicLong = AtomicLong(0L)
 
@@ -41,7 +42,7 @@ open class KModuleBuilder: ReflectedModule {
     recordSig(newSig)
   }
 
-  internal fun recordGlobal(prop: KProperty0<*>, newSig: KSig<*>) {
+  internal fun recordGlobal(prop: KProperty<*>, newSig: KSig<*>) {
     reflectedGlobals[prop] = newSig
     recordSig(newSig)
   }
@@ -105,7 +106,7 @@ open class KModuleBuilder: ReflectedModule {
             null -> throw IllegalArgumentException("cannot reflect type $ret")
             else -> {
               val newProp =
-                if (property is KMutableProperty1 || property.hasAnnotation<variable>())
+                if (property is KMutableProperty<*> || property.hasAnnotation<variable>())
                   k.sig.variable(property.name, sigTy)
                 else
                   k.sig.field(property.name, sigTy)
@@ -114,7 +115,48 @@ open class KModuleBuilder: ReflectedModule {
           }
         }
     }
-    // step 3, add facts
+    // step 3, add global fields
+    klasses.forEach { klass ->
+      val k = reflectedSigs[klass]!!  // should never fail, we've just added it
+      val companionKlass = klass.companionObject
+      val companionValue = klass.companionObjectInstance
+      if (companionKlass != null && companionValue != null) {
+        companionKlass.declaredMemberProperties
+          .forEach { property ->
+            val ret = property.returnType
+            val ty = ret.classifier as? KClass<*>
+            val sigTy: Pair<List<Attr>, KSig<*>>? = when {
+              property.returnType.isMarkedNullable ->
+                findSet(ty)?.let { listOf(Attr.LONE) to it }
+
+              ty?.isSubclassOf(Set::class) == true ->
+                findSet(ret.arguments.firstOrNull()?.type?.classifier as? KClass<*>)?.let {
+                  when {
+                    property.hasAnnotation<lone>() -> listOf(Attr.LONE) to it
+                    property.hasAnnotation<one>() -> listOf(Attr.ONE) to it
+                    property.hasAnnotation<some>() -> emptyList<Attr>() to it
+                    else -> emptyList<Attr>() to it
+                  }
+                }
+
+              else ->
+                findSet(ty)?.let { listOf(Attr.ONE) to it }
+            }
+            when (sigTy) {
+              null -> throw IllegalArgumentException("cannot reflect type $ret")
+              else -> {
+                val newProp =
+                  if (property is KMutableProperty<*> || property.hasAnnotation<variable>())
+                    KSubsetSig<Nothing>(property.name, sigTy.second, *(listOf(Attr.VARIABLE) + sigTy.first).toTypedArray())
+                  else
+                    KSubsetSig<Nothing>(property.name, sigTy.second, *sigTy.first.toTypedArray())
+                recordGlobal(property, newProp)
+              }
+            }
+          }
+      }
+    }
+    // step 4, add facts
     klasses.forEach { klass ->
       val k = reflectedSigs[klass]!!  // should never fail, we've just added it
       val companionKlass = klass.companionObject
@@ -124,53 +166,26 @@ open class KModuleBuilder: ReflectedModule {
           .forEach {
             // we can have a ReflectedModule as argument
             val ext = it.extensionReceiverParameter
-            val newFact =
-              if (ext != null && (ext.type.classifier as? KClass<*>)?.isSubclassOf(Fact::class) == true) {
-                it.call(companionValue, factBuilder(klass))
-              } else null
-            when (newFact) {
-              null -> { /* do nothing */ }
-              is KFormula -> k.sig.fact { newFact }
-              else -> throw IllegalArgumentException("annotated @fact returns type ${newFact::class.simpleName}")
-            }
-          }
-      }
-    }
-  }
-
-  fun reflectGlobal(vararg properties: KProperty0<*>) {
-    properties.forEach { property ->
-      val ret = property.returnType
-      val ty = ret.classifier as? KClass<*>
-      val sigTy: Pair<List<Attr>, KSig<*>>? = when {
-        property.returnType.isMarkedNullable ->
-          findSet(ty)?.let { listOf(Attr.LONE) to it }
-
-        ty?.isSubclassOf(Set::class) == true ->
-          findSet(ret.arguments.firstOrNull()?.type?.classifier as? KClass<*>)?.let {
             when {
-              property.hasAnnotation<lone>() -> listOf(Attr.LONE) to it
-              property.hasAnnotation<one>() -> listOf(Attr.ONE) to it
-              property.hasAnnotation<some>() -> emptyList<Attr>() to it
-              else -> emptyList<Attr>() to it
+              ext == null -> { }
+              (ext.type.classifier as? KClass<*>)?.isSubclassOf(InstanceFact::class) == true ->
+                when (val newFact = it.call(companionValue, instanceFactBuilder(klass))) {
+                  null -> { /* do nothing */ }
+                  is KFormula -> k.sig.fact { newFact }
+                  else -> throw IllegalArgumentException("instance fact returns type ${newFact::class.simpleName}")
+                }
+              (ext.type.classifier as? KClass<*>)?.isSubclassOf(Fact::class) == true ->
+                when (val newFact = it.call(companionValue, factBuilder())) {
+                  null -> { /* do nothing */ }
+                  is KFormula -> fact { newFact }
+                  else -> throw IllegalArgumentException("fact returns type ${newFact::class.simpleName}")
+                }
+              else -> { }
             }
           }
-
-        else ->
-          findSet(ty)?.let { listOf(Attr.ONE) to it }
-      }
-      when (sigTy) {
-        null -> throw IllegalArgumentException("cannot reflect type $ret")
-        else -> {
-          val newProp =
-            if (property is KMutableProperty0 || property.hasAnnotation<variable>())
-              KSubsetSig<Nothing>(property.name, sigTy.second, *(listOf(Attr.VARIABLE) + sigTy.first).toTypedArray())
-            else
-              KSubsetSig<Nothing>(property.name, sigTy.second, *sigTy.first.toTypedArray())
-          recordGlobal(property, newProp)
-        }
       }
     }
+
   }
 
   override fun <A : Any> set(klass: KClass<A>): KSig<A> =
@@ -191,7 +206,12 @@ open class KModuleBuilder: ReflectedModule {
 
   @Suppress("UNCHECKED_CAST")
   override fun <F> global(property: KProperty0<F>): KSet<F> =
-    reflectedGlobals[property]!! as KSet<F>
+    when (val r = reflectedGlobals[property]) {
+      is KSet<*> -> r as KSet<F>
+      else -> reflectedGlobals.firstNotNullOf { (k, v) ->
+        v.takeIf { k.javaGetter == property.javaGetter }
+      } as KSet<F>
+    }
 
   fun fact(formula: KFormula) {
     facts.add(formula)
@@ -201,9 +221,13 @@ open class KModuleBuilder: ReflectedModule {
     facts.add(formula())
   }
 
-  private fun <A: Any> factBuilder(klass: KClass<A>): Fact<A> = object : Fact<A>, ReflectedModule by this {
-    override val self: KThis<A> = set(klass).self()
-  }
+  private fun <A: Any> instanceFactBuilder(klass: KClass<A>): InstanceFact<A> =
+    object : InstanceFact<A>, ReflectedModule by this {
+      override val self: KThis<A> = set(klass).self()
+    }
+
+  private fun factBuilder(): Fact =
+    object : Fact, ReflectedModule by this { }
 
   fun KTemporalFormulaBuilder.skipTransition(): Unit =
     this@KModuleBuilder.build().skipTransition()

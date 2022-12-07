@@ -11,16 +11,26 @@ interface Node {
   val id: Id
   var inbox: Set<Id>
   var outbox: Set<Id>
-}
 
-var Elected: Set<Node> by model
+  companion object {
+    var Elected: Set<Node> by model
+  }
+}
 
 interface Id {
   val next: Id?
+
+  companion object {
+    val first: Id by model
+    val last: Id by model
+
+    fun Fact.finiteId(): KFormula = and {
+      + no (global(::last) / Id::next)
+      + (set<Id>() `in` global(::first) / reflexiveClosureOptional(Id::next))
+    }
+  }
 }
 
-val first: Id by model
-val last: Id by model
 
 context(ReflectedModule)
 infix fun KSet<Id>.gt(other: KSet<Id>): KFormula =
@@ -34,7 +44,7 @@ sealed interface Transition: StateMachine
     + no(field(Node::inbox))
     + no(field(Node::outbox))
     // initially there are no elected nodes
-    + no(global(::Elected))
+    + no(global(Node::Elected))
   }
 }
 
@@ -47,7 +57,7 @@ data class Initiate(val n: KArg<Node>): Transition {
     + forAll(set<Node>() - n) { m -> stays(m / Node::outbox) }
 
     + stays(field(Node::inbox))  // frame condition on inbox
-    + stays(global(::Elected))      // frame condition on Elected
+    + stays(global(Node::Elected))      // frame condition on Elected
   }
 }
 
@@ -61,7 +71,7 @@ data class Send(val n: KArg<Node>, val i: KArg<Id>): Transition {
     + ( next((n / Node::succ) / Node::inbox) `==` (current((n / Node::succ) / Node::inbox) + i) )
     + forAll(set<Node>() - (n / Node::succ)) { m -> stays(m / Node::inbox) }
 
-    + stays(global(::Elected))
+    + stays(global(Node::Elected))
   }
 }
 
@@ -79,8 +89,8 @@ data class Read(val n: KArg<Node>, val i: KArg<Id>): Transition {
     + forAll(set<Node>() - n) { m -> stays(m / Node::outbox) }
 
     + (i `==` n / Node::id).ifThen(
-      ifTrue = next(global(::Elected)) `==` current(global(::Elected)) + n,
-      ifFalse = stays(global(::Elected))
+      ifTrue = next(global(Node::Elected)) `==` current(global(Node::Elected)) + n,
+      ifFalse = stays(global(Node::Elected))
     )
   }
 }
@@ -88,15 +98,10 @@ data class Read(val n: KArg<Node>, val i: KArg<Id>): Transition {
 fun main() {
   execute {
     reflect(reflectAll = true, Node::class, Id::class)
-    reflectGlobal(::Elected, ::first, ::last)
 
     fact {
       forAll { n -> set<Node>() `in` n / closure(Node::succ) }
     }
-
-    fact { no (global(::last) / Id::next) }
-    fact { set<Id>() `in` global(::first) / reflexiveClosureOptional(Id::next) }
-
     fact {
       forAll { i -> lone(Node::id / i) }
     }
@@ -105,7 +110,7 @@ fun main() {
 
     // find a trace which satisfies the formula
     run(overall = 30, bitwidth = 10, scopes = listOf(exactly<Node>(3), exactly<Id>(3))) {
-      eventually { some(global(::Elected)) }
+      eventually { some(global(Node::Elected)) }
     }.visualize()
 
     // try to find a counterexample
