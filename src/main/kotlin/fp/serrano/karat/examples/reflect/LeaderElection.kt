@@ -56,8 +56,8 @@ data class Initiate(val n: KArg<Node>): Transition {
     // effect on the outboxes of other nodes
     + forAll(set<Node>() - n) { m -> stays(m / Node::outbox) }
 
-    + stays(field(Node::inbox))  // frame condition on inbox
-    + stays(global(Node::Elected))      // frame condition on Elected
+    + stays(field(Node::inbox))    // frame condition on inbox
+    + stays(global(Node::Elected)) // frame condition on Elected
   }
 }
 
@@ -99,11 +99,9 @@ fun main() {
   execute {
     reflect(reflectAll = true, Node::class, Id::class)
 
-    fact {
-      forAll { n -> set<Node>() `in` n / closure(Node::succ) }
-    }
-    fact {
-      forAll { i -> lone(Node::id / i) }
+    facts {
+      + forAll { n -> set<Node>() `in` n / closure(Node::succ) }
+      + forAll { i -> lone(Node::id / i) }
     }
 
     reflectMachine(Transition::class, transitionSigName = "Event", skipName = "Stutter")

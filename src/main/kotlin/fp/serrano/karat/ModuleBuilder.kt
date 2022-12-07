@@ -2,6 +2,7 @@ package fp.serrano.karat
 
 import edu.mit.csail.sdg.ast.Attr
 import fp.serrano.karat.ast.*
+import java.lang.reflect.Method
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.reflect.*
 import kotlin.reflect.full.*
@@ -16,7 +17,7 @@ open class KModuleBuilder: ReflectedModule {
 
   data class ReflectedSig<A>(val sig: KSig<A>, val fields: MutableMap<KProperty1<*, *>, KField<*, *>> = mutableMapOf())
   val reflectedSigs: MutableMap<KClass<*>, ReflectedSig<*>> = mutableMapOf()
-  val reflectedGlobals: MutableMap<KProperty<*>, KSig<*>> = mutableMapOf()
+  val reflectedGlobals: MutableMap<Method, KSig<*>> = mutableMapOf()
 
   var unique: AtomicLong = AtomicLong(0L)
 
@@ -43,7 +44,7 @@ open class KModuleBuilder: ReflectedModule {
   }
 
   internal fun recordGlobal(prop: KProperty<*>, newSig: KSig<*>) {
-    reflectedGlobals[prop] = newSig
+    reflectedGlobals[prop.javaGetter!!] = newSig
     recordSig(newSig)
   }
 
@@ -206,19 +207,18 @@ open class KModuleBuilder: ReflectedModule {
 
   @Suppress("UNCHECKED_CAST")
   override fun <F> global(property: KProperty0<F>): KSet<F> =
-    when (val r = reflectedGlobals[property]) {
-      is KSet<*> -> r as KSet<F>
-      else -> reflectedGlobals.firstNotNullOf { (k, v) ->
-        v.takeIf { k.javaGetter == property.javaGetter }
-      } as KSet<F>
-    }
+    reflectedGlobals[property.javaGetter]!! as KSet<F>
 
   fun fact(formula: KFormula) {
     facts.add(formula)
   }
 
-  fun fact(formula: ReflectedModule.() -> KFormula) {
+  fun fact(formula: () -> KFormula) {
     facts.add(formula())
+  }
+
+  fun facts(formula: KParagraphBuilder.() -> Unit) {
+    fact { and(formula) }
   }
 
   private fun <A: Any> instanceFactBuilder(klass: KClass<A>): InstanceFact<A> =
