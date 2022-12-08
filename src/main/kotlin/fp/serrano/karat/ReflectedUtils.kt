@@ -41,6 +41,10 @@ inline fun <reified A: Any> ReflectedModule.empty(): KFormula = empty(set<A>())
 fun <A, F> ReflectedModule.empty(property: KProperty1<A, F>): KFormula = empty(field(property))
 fun <F> ReflectedModule.empty(property: KProperty0<F>): KFormula = empty(global(property))
 
+inline fun <reified A: Any> ReflectedModule.atMostOne(): KFormula = atMostOne(set<A>())
+fun <A, F> ReflectedModule.atMostOne(property: KProperty1<A, F>): KFormula = atMostOne(field(property))
+fun <F> ReflectedModule.atMostOne(property: KProperty0<F>): KFormula = atMostOne(global(property))
+
 fun <A, F> ReflectedModule.next(property: KProperty1<A, F>): KSet<Pair<A, F>> = next(field(property))
 fun <F> ReflectedModule.next(property: KProperty0<F>): KSet<F> = next(global(property))
 

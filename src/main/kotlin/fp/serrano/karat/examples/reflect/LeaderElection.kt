@@ -31,7 +31,6 @@ interface Id {
   }
 }
 
-
 context(ReflectedModule)
 infix fun KSet<Id>.gt(other: KSet<Id>): KFormula =
   this `in` (other / closureOptional(Id::next))
@@ -50,11 +49,11 @@ sealed interface Transition: StateMachine
 
 data class Initiate(val n: KArg<Node>): Transition {
   override fun ReflectedModule.execute(): KFormula = and {
-    + historically { not(n / Node::id `in` n / Node::outbox) }
+    + neverBefore { n / Node::id `in` n / Node::outbox }
     // effect on n.outbox
     + ( next(n / Node::outbox) `==` current(n / Node::outbox) + n / Node::id )
     // effect on the outboxes of other nodes
-    + forAll(set<Node>() - n) { m -> stays(m / Node::outbox) }
+    + forAll(set<Node>() - n) { stays(it / Node::outbox) }
 
     + stays(Node::inbox)   // frame condition on inbox
     + stays(Node::Elected) // frame condition on Elected
@@ -66,10 +65,10 @@ data class Send(val n: KArg<Node>, val i: KArg<Id>): Transition {
     + (i `in` current(n / Node::outbox))
 
     + ( next(n / Node::outbox) `==` current(n / Node::outbox) - i )
-    + forAll(set<Node>() - n) { m -> stays(m / Node::outbox) }
+    + forAll(set<Node>() - n) { stays(it / Node::outbox) }
 
-    + ( next((n / Node::succ) / Node::inbox) `==` (current((n / Node::succ) / Node::inbox) + i) )
-    + forAll(set<Node>() - (n / Node::succ)) { m -> stays(m / Node::inbox) }
+    + ( next((n / Node::succ) / Node::inbox) `==` current(n / Node::succ / Node::inbox) + i )
+    + forAll(set<Node>() - (n / Node::succ)) { stays(it / Node::inbox) }
 
     + stays(Node::Elected)
   }
@@ -86,7 +85,7 @@ data class Read(val n: KArg<Node>, val i: KArg<Id>): Transition {
       ifTrue  = next(n / Node::outbox) `==` current(n / Node::outbox) + i,
       ifFalse = stays(n / Node::outbox)
     )
-    + forAll(set<Node>() - n) { m -> stays(m / Node::outbox) }
+    + forAll(set<Node>() - n) { stays(it / Node::outbox) }
 
     + (i `==` n / Node::id).ifThen(
       ifTrue = next(Node::Elected) `==` current(Node::Elected) + n,
@@ -100,8 +99,10 @@ fun main() {
     reflect(reflectAll = true, Node::class, Id::class)
 
     facts {
+      // nodes form a ring
       + forAll { n -> set<Node>() `in` n / closure(Node::succ) }
-      + forAll { i -> lone(Node::id / i) }
+      // all nodes have unique id's
+      + forAll { i -> atMostOne(Node::id / i) }
     }
 
     reflectMachine(Transition::class, transitionSigName = "Event", skipName = "Stutter")

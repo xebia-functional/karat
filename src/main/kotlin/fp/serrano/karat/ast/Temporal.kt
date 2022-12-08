@@ -33,6 +33,12 @@ fun historically(formula: KFormula): KFormula =
 fun historically(formula: () -> KFormula): KFormula =
   historically(formula())
 
+fun neverBefore(formula: KFormula): KFormula =
+  historically(not(formula))
+
+fun neverBefore(formula: () -> KFormula): KFormula =
+  historically(not(formula()))
+
 fun before(formula: KFormula): KFormula =
   KFormula(formula.expr.before())
 

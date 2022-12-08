@@ -20,6 +20,8 @@ fun <A> some(sr: KSet<A>): KFormula = KFormula(sr.expr.some())
 
 fun <A> lone(sr: KSet<A>): KFormula = KFormula(sr.expr.lone())
 
+fun <A> atMostOne(sr: KSet<A>): KFormula = lone(sr)
+
 fun <A> one(sr: KSet<A>): KFormula = KFormula(sr.expr.one())
 
 // basic set operations
