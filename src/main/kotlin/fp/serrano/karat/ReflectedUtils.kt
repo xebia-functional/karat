@@ -54,6 +54,14 @@ fun <F> ReflectedModule.current(property: KProperty0<F>): KSet<F> = current(glob
 fun <A, F> ReflectedModule.stays(property: KProperty1<A, F>): KFormula = stays(field(property))
 fun <F> ReflectedModule.stays(property: KProperty0<F>): KFormula = stays(global(property))
 
+fun <A> ReflectedModule.closure(p: KProperty1<A, A>): KRelation<A, A> = closure(field(p))
+fun <A> ReflectedModule.closureOptional(p: KProperty1<A, A?>): KRelation<A, A> = closureOptional(field(p))
+fun <A> ReflectedModule.oneOrMore(p: KProperty1<A, A?>): KRelation<A, A> = closureOptional(field(p))
+
+fun <A> ReflectedModule.reflexiveClosure(p: KProperty1<A, A>): KRelation<A, A> = reflexiveClosure(field(p))
+fun <A> ReflectedModule.reflexiveClosureOptional(p: KProperty1<A, A?>): KRelation<A, A> = reflexiveClosureOptional(field(p))
+fun <A> ReflectedModule.zeroOrMore(p: KProperty1<A, A?>): KRelation<A, A> = reflexiveClosureOptional(field(p))
+
 // indicates a global fact
 interface Fact: ReflectedModule
 // indicates a fact which applies to each instance of the class

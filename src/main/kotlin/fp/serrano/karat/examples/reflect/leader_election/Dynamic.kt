@@ -1,7 +1,8 @@
-package fp.serrano.karat.examples.reflect
+package fp.serrano.karat.examples.reflect.leader_election
 
 import fp.serrano.karat.*
 import fp.serrano.karat.ast.*
+import fp.serrano.karat.common.*
 import fp.serrano.karat.ui.visualize
 
 // based on https://haslab.github.io/formal-software-design/protocol-design/index.html
@@ -14,30 +15,20 @@ interface Node {
 
   companion object {
     var Elected: Set<Node> by model
-  }
-}
 
-interface Id {
-  val next: Id?
-
-  companion object {
-    val first: Id by model
-    val last: Id by model
-
-    fun Fact.finiteId(): KFormula = and {
-      + no (global(::last) / Id::next)
-      + (set<Id>() `in` global(::first) / reflexiveClosureOptional(Id::next))
+    fun Fact.ring(): KFormula = and {
+      // nodes form a ring
+      + forAll { n -> set<Node>() `in` n / oneOrMore(Node::succ) }
+      // all nodes have unique id's
+      + forAll { i -> atMostOne(Node::id / i) }
     }
   }
 }
 
-context(ReflectedModule)
-infix fun KSet<Id>.gt(other: KSet<Id>): KFormula =
-  this `in` (other / closureOptional(Id::next))
-
 sealed interface Transition: StateMachine
 
-@initial object Empty: Transition {
+@initial
+object Empty: Transition {
   override fun ReflectedModule.execute(): KFormula = and {
     // initially inbox and outbox are empty
     + empty(Node::inbox)
@@ -51,7 +42,7 @@ data class Initiate(val n: KArg<Node>): Transition {
   override fun ReflectedModule.execute(): KFormula = and {
     + neverBefore { n / Node::id `in` n / Node::outbox }
     // effect on n.outbox
-    + ( next(n / Node::outbox) `==` current(n / Node::outbox) + n / Node::id )
+    + (next(n / Node::outbox) `==` current(n / Node::outbox) + n / Node::id)
     // effect on the outboxes of other nodes
     + forAll(set<Node>() - n) { stays(it / Node::outbox) }
 
@@ -64,10 +55,10 @@ data class Send(val n: KArg<Node>, val i: KArg<Id>): Transition {
   override fun ReflectedModule.execute(): KFormula = and {
     + (i `in` current(n / Node::outbox))
 
-    + ( next(n / Node::outbox) `==` current(n / Node::outbox) - i )
+    + (next(n / Node::outbox) `==` current(n / Node::outbox) - i)
     + forAll(set<Node>() - n) { stays(it / Node::outbox) }
 
-    + ( next((n / Node::succ) / Node::inbox) `==` current(n / Node::succ / Node::inbox) + i )
+    + (next((n / Node::succ) / Node::inbox) `==` current(n / Node::succ / Node::inbox) + i)
     + forAll(set<Node>() - (n / Node::succ)) { stays(it / Node::inbox) }
 
     + stays(Node::Elected)
@@ -78,11 +69,11 @@ data class Read(val n: KArg<Node>, val i: KArg<Id>): Transition {
   override fun ReflectedModule.execute(): KFormula = and {
     + (i `in` current(n / Node::inbox))
 
-    + ( next(n / Node::inbox) `==` current(n / Node::inbox) - i )
+    + (next(n / Node::inbox) `==` current(n / Node::inbox) - i)
     + forAll(set<Node>() - n) { m -> stays(m / Node::inbox) }
 
     + (i gt n / Node::id).ifThen(
-      ifTrue  = next(n / Node::outbox) `==` current(n / Node::outbox) + i,
+      ifTrue = next(n / Node::outbox) `==` current(n / Node::outbox) + i,
       ifFalse = stays(n / Node::outbox)
     )
     + forAll(set<Node>() - n) { stays(it / Node::outbox) }
@@ -97,14 +88,6 @@ data class Read(val n: KArg<Node>, val i: KArg<Id>): Transition {
 fun main() {
   execute {
     reflect(reflectAll = true, Node::class, Id::class)
-
-    facts {
-      // nodes form a ring
-      + forAll { n -> set<Node>() `in` n / closure(Node::succ) }
-      // all nodes have unique id's
-      + forAll { i -> atMostOne(Node::id / i) }
-    }
-
     reflectMachine(Transition::class, transitionSigName = "Event", skipName = "Stutter")
 
     // find a trace which satisfies the formula
