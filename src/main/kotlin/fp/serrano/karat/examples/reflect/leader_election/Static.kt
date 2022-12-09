@@ -2,14 +2,13 @@ package fp.serrano.karat.examples.reflect.leader_election
 
 import fp.serrano.karat.*
 import fp.serrano.karat.ast.*
-import fp.serrano.karat.common.*
 import fp.serrano.karat.ui.visualize
 
 // based on https://haslab.github.io/formal-software-design/protocol-design/index.html
 
 interface SNode {
   val succ: SNode
-  val id: Id
+  val id: Int
 
   companion object {
     fun Fact.ring(): KFormula = and {
@@ -23,9 +22,9 @@ interface SNode {
 
 fun main() {
   execute {
-    reflect(reflectAll = true, SNode::class, Id::class)
+    reflect(reflectAll = true, SNode::class)
 
-    run(overall = 30, bitwidth = 10, scopes = listOf(exactly<SNode>(3), exactly<Id>(3))) {
+    run(overall = 30, bitwidth = 3, scopes = listOf(exactly<SNode>(3))) {
       Constants.TRUE
     }.visualize()
   }
