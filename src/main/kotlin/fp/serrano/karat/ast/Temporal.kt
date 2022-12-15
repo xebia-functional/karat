@@ -39,6 +39,12 @@ fun neverBefore(formula: KFormula): KFormula =
 fun neverBefore(formula: () -> KFormula): KFormula =
   historically(not(formula()))
 
+fun after(formula: KFormula): KFormula =
+  KFormula(formula.expr.after())
+
+fun after(formula: () -> KFormula): KFormula =
+  after(formula())
+
 fun before(formula: KFormula): KFormula =
   KFormula(formula.expr.before())
 
