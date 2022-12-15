@@ -27,17 +27,29 @@ fun <A> one(sr: KSet<A>): KFormula = KFormula(sr.expr.one())
 fun <A> cardinality(sr: KSet<A>): KExpr<Int> =
   KExpr(sr.expr.cardinality())
 
+val <A> KSet<A>.size
+  get() = cardinality(this)
+
 operator fun <A> KSet<A>.plus(other: KSet<A>): KSet<A> =
   KSet(this.expr.plus(other.expr))
 
 infix fun <A> KSet<A>.union(other: KSet<A>): KSet<A> =
   this + other
 
+infix fun <A, B> KSet<Pair<A, B>>.plus(other: Pair<KSet<A>, KSet<B>>): KSet<Pair<A, B>> =
+  this + KSet(other.first.expr.product(other.second.expr))
+
 operator fun <A> KSet<A>.minus(other: KSet<A>): KSet<A> =
   KSet(this.expr.minus(other.expr))
 
 infix fun <A> KSet<A>.diff(other: KSet<A>): KSet<A> =
   this - other
+
+infix fun <A, B> KSet<Pair<A, B>>.minus(other: Pair<KExpr<A>, KExpr<B>>): KSet<Pair<A, B>> =
+  KSet(this.expr.plus(other.first.expr.product(other.second.expr)))
+
+infix fun <A, B> KSet<Pair<A, B>>.minus(other: Pair<KSet<A>, KSet<B>>): KSet<Pair<A, B>> =
+  this - KSet(other.first.expr.product(other.second.expr))
 
 infix fun <A> KSet<A>.`&`(other: KSet<A>): KSet<A> =
   KSet(this.expr.intersect(other.expr))

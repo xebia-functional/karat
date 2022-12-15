@@ -6,7 +6,6 @@ import edu.mit.csail.sdg.ast.ExprConstant
 import edu.mit.csail.sdg.ast.ExprITE
 import edu.mit.csail.sdg.ast.ExprList
 import edu.mit.csail.sdg.ast.ExprQt
-import fp.serrano.karat.ReflectedModule
 
 interface TFormula
 
@@ -89,12 +88,6 @@ fun <A> `for`(
   return KFormula(op.make(null, null, listOf(arg.decl), block(arg).expr))
 }
 
-inline fun <reified A: Any> ReflectedModule.`for`(
-  op: ExprQt.Op,
-  x: String,
-  noinline block: (KArg<A>) -> KFormula
-): KFormula = `for`(op, x to set(A::class), block)
-
 fun <A> `for`(
   op: ExprQt.Op,
   t1: KSet<A>,
@@ -112,13 +105,6 @@ fun <A, B> `for`(
   return KFormula(op.make(null, null, listOf(arg1.decl, arg2.decl), block(arg1, arg2).expr))
 }
 
-inline fun <reified A: Any, reified B: Any> ReflectedModule.`for`(
-  op: ExprQt.Op,
-  x: String,
-  y: String,
-  noinline block: (KArg<A>, KArg<B>) -> KFormula
-): KFormula = `for`(op, x to set(A::class), y to set(B::class), block)
-
 fun <A, B> `for`(
   op: ExprQt.Op,
   t1: KSet<A>,
@@ -133,20 +119,6 @@ fun <A> forAll(
   block: (KArg<A>) -> KFormula
 ): KFormula = `for`(ExprQt.Op.ALL, x, block)
 
-inline fun <reified A: Any> ReflectedModule.forAll(
-  x: String,
-  noinline block: (KArg<A>) -> KFormula
-): KFormula = `for`(ExprQt.Op.ALL, x, block)
-
-inline fun <reified A: Any> ReflectedModule.forAll(
-  noinline block: (KArg<A>) -> KFormula
-): KFormula = `for`(ExprQt.Op.ALL, nextUnique(A::class), block)
-
-inline fun <reified A: Any> ReflectedModule.forAll(
-  s: KSet<A>,
-  noinline block: (KArg<A>) -> KFormula
-): KFormula = `for`(ExprQt.Op.ALL, nextUnique(A::class) to s, block)
-
 fun <A> forAll(
   t1: KSet<A>,
   fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
@@ -157,16 +129,6 @@ fun <A, B> forAll(
   y: Pair<String, KSet<B>>,
   block: (KArg<A>, KArg<B>) -> KFormula
 ): KFormula = `for`(ExprQt.Op.ALL, x, y, block)
-
-inline fun <reified A: Any, reified B: Any> ReflectedModule.forAll(
-  x: String,
-  y: String,
-  noinline block: (KArg<A>, KArg<B>) -> KFormula
-): KFormula = `for`(ExprQt.Op.ALL, x, y, block)
-
-inline fun <reified A: Any, reified B: Any> ReflectedModule.forAll(
-  noinline block: (KArg<A>, KArg<B>) -> KFormula
-): KFormula = `for`(ExprQt.Op.ALL, nextUnique(A::class), nextUnique(B::class), block)
 
 fun <A, B> forAll(
   t1: KSet<A>,
@@ -179,20 +141,6 @@ fun <A> forSome(
   block: (KArg<A>) -> KFormula
 ): KFormula = `for`(ExprQt.Op.SOME, x, block)
 
-inline fun <reified A: Any> ReflectedModule.forSome(
-  x: String,
-  noinline block: (KArg<A>) -> KFormula
-): KFormula = `for`(ExprQt.Op.SOME, x, block)
-
-inline fun <reified A: Any> ReflectedModule.forSome(
-  s: KSet<A>,
-  noinline block: (KArg<A>) -> KFormula
-): KFormula = `for`(ExprQt.Op.SOME, nextUnique(A::class) to s, block)
-
-inline fun <reified A: Any> ReflectedModule.forSome(
-  noinline block: (KArg<A>) -> KFormula
-): KFormula = `for`(ExprQt.Op.SOME, nextUnique(A::class), block)
-
 fun <A> forSome(
   t1: KSet<A>,
   fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
@@ -203,16 +151,6 @@ fun <A, B> forSome(
   y: Pair<String, KSet<B>>,
   block: (KArg<A>, KArg<B>) -> KFormula
 ): KFormula = `for`(ExprQt.Op.SOME, x, y, block)
-
-inline fun <reified A: Any, reified B: Any> ReflectedModule.forSome(
-  x: String,
-  y: String,
-  noinline block: (KArg<A>, KArg<B>) -> KFormula
-): KFormula = `for`(ExprQt.Op.SOME, x, y, block)
-
-inline fun <reified A: Any, reified B: Any> ReflectedModule.forSome(
-  noinline block: (KArg<A>, KArg<B>) -> KFormula
-): KFormula = `for`(ExprQt.Op.SOME, nextUnique(A::class), nextUnique(B::class), block)
 
 fun <A, B> forSome(
   t1: KSet<A>,

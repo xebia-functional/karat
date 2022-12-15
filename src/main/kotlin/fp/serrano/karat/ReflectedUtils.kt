@@ -1,5 +1,6 @@
 package fp.serrano.karat
 
+import edu.mit.csail.sdg.ast.ExprQt
 import fp.serrano.karat.ast.*
 import kotlin.reflect.*
 
@@ -27,6 +28,13 @@ interface ReflectedModule {
     this `==` set(other)
 
   fun nextUnique(klass: KClass<*>): String
+}
+
+// indicates a global fact
+interface Fact: ReflectedModule
+// indicates a fact which applies to each instance of the class
+interface InstanceFact<A>: ReflectedModule {
+  val self: KThis<A>
 }
 
 fun <A: Any> ReflectedModule.someOf(klass: KClass<A>): KSet<A> = someOf(set(klass))
@@ -62,9 +70,63 @@ fun <A> ReflectedModule.reflexiveClosure(p: KProperty1<A, A>): KRelation<A, A> =
 fun <A> ReflectedModule.reflexiveClosureOptional(p: KProperty1<A, A?>): KRelation<A, A> = reflexiveClosureOptional(field(p))
 fun <A> ReflectedModule.zeroOrMore(p: KProperty1<A, A?>): KRelation<A, A> = reflexiveClosureOptional(field(p))
 
-// indicates a global fact
-interface Fact: ReflectedModule
-// indicates a fact which applies to each instance of the class
-interface InstanceFact<A>: ReflectedModule {
-  val self: KThis<A>
-}
+inline fun <reified A: Any> ReflectedModule.`for`(
+  op: ExprQt.Op,
+  x: String,
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(op, x to set(A::class), block)
+
+inline fun <reified A: Any, reified B: Any> ReflectedModule.`for`(
+  op: ExprQt.Op,
+  x: String,
+  y: String,
+  noinline block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(op, x to set(A::class), y to set(B::class), block)
+
+inline fun <reified A: Any> ReflectedModule.forAll(
+  x: String,
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ALL, x, block)
+
+inline fun <reified A: Any> ReflectedModule.forAll(
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ALL, nextUnique(A::class), block)
+
+inline fun <reified A: Any> ReflectedModule.forAll(
+  s: KSet<A>,
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ALL, nextUnique(A::class) to s, block)
+
+inline fun <reified A: Any, reified B: Any> ReflectedModule.forAll(
+  x: String,
+  y: String,
+  noinline block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ALL, x, y, block)
+
+inline fun <reified A: Any, reified B: Any> ReflectedModule.forAll(
+  noinline block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ALL, nextUnique(A::class), nextUnique(B::class), block)
+
+inline fun <reified A: Any> ReflectedModule.forSome(
+  x: String,
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.SOME, x, block)
+
+inline fun <reified A: Any> ReflectedModule.forSome(
+  s: KSet<A>,
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.SOME, nextUnique(A::class) to s, block)
+
+inline fun <reified A: Any> ReflectedModule.forSome(
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.SOME, nextUnique(A::class), block)
+
+inline fun <reified A: Any, reified B: Any> ReflectedModule.forSome(
+  x: String,
+  y: String,
+  noinline block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.SOME, x, y, block)
+
+inline fun <reified A: Any, reified B: Any> ReflectedModule.forSome(
+  noinline block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.SOME, nextUnique(A::class), nextUnique(B::class), block)
