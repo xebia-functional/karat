@@ -17,9 +17,9 @@ interface Node {
 
     fun Fact.ring(): KFormula = and {
       // nodes form a ring
-      + forAll { n -> set<Node>() `in` n / oneOrMore(Node::succ) }
+      + forAll<Node> { n -> set<Node>() `in` n / oneOrMore(Node::succ) }
       // all nodes have unique id's
-      + forAll { i -> atMostOne(Node::id / i) }
+      + forAll { i -> atMostOne(Node::id % i) }
     }
   }
 }

@@ -7,9 +7,7 @@ import edu.mit.csail.sdg.ast.ExprITE
 import edu.mit.csail.sdg.ast.ExprList
 import edu.mit.csail.sdg.ast.ExprQt
 
-interface TFormula
-
-open class KFormula(expr: Expr): KExpr<TFormula>(expr)
+open class KFormula(val expr: Expr)
 
 // paragraphs are sets of formulae in conjunction
 
@@ -71,13 +69,13 @@ fun KFormula.ifThen(ifTrue: KFormula, ifFalse: KFormula): KFormula =
 
 // comparisons
 
-infix fun <A> KExpr<A>.`==`(other: KExpr<A>): KFormula =
+infix fun <A> KSet<A>.`==`(other: KSet<A>): KFormula =
   KFormula(this.expr.equal(other.expr))
 
-infix fun <A> KExpr<A>.`!=`(other: KExpr<A>): KFormula =
+infix fun <A> KSet<A>.`!=`(other: KSet<A>): KFormula =
   not(KFormula(this.expr.equal(other.expr)))
 
-infix fun <A> KExpr<A>.`in`(other: KSet<A>): KFormula =
+infix fun <A> KSet<A>.`in`(other: KSet<A>): KFormula =
   KFormula(this.expr.`in`(other.expr))
 
 // quantification

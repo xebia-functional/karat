@@ -17,14 +17,23 @@ interface ReflectedModule {
 
   operator fun <A, B> KSet<A>.div(other: KProperty1<A, B>): KSet<B> =
     this / field(other)
-  operator fun <A, B, C> KProperty1<A, B>.div(other: KProperty1<B, C>): KRelation<A, C> =
-    field(this) / field(other)
-  operator fun <A, B> KProperty1<A, B>.div(other: KSet<B>): KSet<A> =
-    field(this) / other
+  infix fun <A, B, C> KProperty1<A, B>.join(other: KProperty1<B, C>): KRelation<A, C> =
+    field(this) join field(other)
+  operator fun <A, B> KProperty1<A, B>.rem(other: KSet<B>): KSet<A> =
+    field(this) % other
   operator fun <A: Any, F> KProperty1<A, F>.get(other: KSet<A>): KSet<F> =
     field(this)[other]
 
-  infix fun <A: Any, B: A> KExpr<Set<A>>.`==`(other: KClass<B>): KFormula =
+  val <A, B> KProperty1<A, Set<B>>.flattenR: KRelation<A, B>
+    get() = field(this).flattenR
+  val <A, B, C> KProperty1<A, Map<B, C>>.asRelationR: KRelation<A, Pair<B, C>>
+    get() = field(this).asRelationR
+  val <A, B, C> KProperty1<A, Map<B, Set<C>>>.asRelationSetR: KRelation<A, Pair<B, C>>
+    get() = field(this).asRelationSetR
+  val <A, B, C> KProperty1<A, Map<B, C?>>.asRelationNullableR: KRelation<A, Pair<B, C>>
+    get() = field(this).asRelationNullableR
+
+  infix fun <A: Any, B: A> KSet<A>.`==`(other: KClass<B>): KFormula =
     this `==` set(other)
 
   fun nextUnique(klass: KClass<*>): String
@@ -44,6 +53,8 @@ fun <A: Any> ReflectedModule.setOf(klass: KClass<A>): KSet<A> = setOf(set(klass)
 
 inline fun <reified A: Any> ReflectedModule.set(): KSig<A> = set(A::class)
 inline fun <reified A: Any> ReflectedModule.element(): KSig<A> = set(A::class)
+inline fun <B: Any, reified A: B> ReflectedModule.limit(x: KSet<B>): KSet<A> =
+  KSet((x `&` set(A::class)).expr)
 
 inline fun <reified A: Any> ReflectedModule.empty(): KFormula = empty(set<A>())
 fun <A, F> ReflectedModule.empty(property: KProperty1<A, F>): KFormula = empty(field(property))

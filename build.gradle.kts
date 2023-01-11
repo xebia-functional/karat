@@ -22,5 +22,5 @@ tasks.test {
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
-    kotlinOptions.freeCompilerArgs = listOf("-Xskip-runtime-version-check", "-Xinline-classes", "-Xcontext-receivers")
+    kotlinOptions.freeCompilerArgs = listOf("-Xinline-classes", "-Xcontext-receivers")
 }

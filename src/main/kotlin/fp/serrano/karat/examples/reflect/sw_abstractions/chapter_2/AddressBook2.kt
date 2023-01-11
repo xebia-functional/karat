@@ -10,18 +10,33 @@ interface Addr2: Target2
 interface Alias2: Name2
 interface Group2: Name2
 interface Book2 {
-  val addr: Map<Name2, Target2>
+  val names: Set<Name2>
+  val addr: Map<Name2, Set<Target2>>
 
   companion object {
-    fun InstanceFact<Book2>.noCycles(): KFormula =
-      forNo<Name> { n ->
-        n `in` n / closure((self / Book2::addr).asRelation)
-      }
+    fun InstanceFact<Book2>.noCycles(): KFormula = and {
+      val addr = self / Book2::addr.asRelationSetR
+      + (domain(addr) `==` self / Book2::names.flattenR)
+      + forNo<Name2> { n -> n `in` n / closure(addr) }
+      + forAll<Name2> { n -> some(n / addr) }
+      + forAll<Alias2> { a -> lone(a / addr) }
+    }
   }
 }
+
+fun ReflectedModule.lookup(b: KArg<Book2>, n: KArg<Name2>): KSet<Addr2> =
+  limit<_, Addr2>(n / closure(b / Book2::addr.asRelationSetR))
 
 fun main() {
   execute {
     reflect(reflectAll = true, Target2::class, Addr2::class, Name2::class, Alias2::class, Group2::class, Book2::class)
+
+    check(overall = 4, scopes = listOf(exactly<Book2>(1))) {
+      forAll<Book2> { b ->
+        forAll(b / Book2::names.flattenR) { n ->
+          some(lookup(b, n))
+        }
+      }
+    }.visualize()
   }
 }

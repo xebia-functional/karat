@@ -61,8 +61,8 @@ fun <A, F> KSig<A>.variable(
     Pos.UNKNOWN, arrayOf(name), type.expr
   ).first())
 
-class KThis<A>(expr: ExprHasName): KSet<A>(expr), KHasName {
-  override val label: String = expr.label
+class KThis<A>(expr: ExprHasName): KSet<A>(expr) {
+  val label: String = expr.label
 }
 
 fun <A> KSig<A>.self(): KThis<A> =

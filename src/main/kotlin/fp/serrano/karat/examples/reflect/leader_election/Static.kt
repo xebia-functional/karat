@@ -13,9 +13,9 @@ interface SNode {
   companion object {
     fun Fact.ring(): KFormula = and {
       // SNodes form a ring
-      + forAll { n -> set<SNode>() `in` n / oneOrMore(SNode::succ) }
+      + forAll<Node> { n -> set<SNode>() `in` n / oneOrMore(SNode::succ) }
       // all SNodes have unique id's
-      + forAll { i -> atMostOne(SNode::id / i) }
+      + forAll { i -> atMostOne(SNode::id % i) }
     }
   }
 }
