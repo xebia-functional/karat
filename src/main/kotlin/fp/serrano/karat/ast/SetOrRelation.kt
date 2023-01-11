@@ -36,7 +36,7 @@ operator fun <A> KSet<A>.plus(other: KSet<A>): KSet<A> =
 infix fun <A> KSet<A>.union(other: KSet<A>): KSet<A> =
   this + other
 
-infix fun <A, B> KSet<Pair<A, B>>.plus(other: Pair<KSet<A>, KSet<B>>): KSet<Pair<A, B>> =
+operator fun <A, B> KSet<Pair<A, B>>.plus(other: Pair<KSet<A>, KSet<B>>): KSet<Pair<A, B>> =
   this + KSet(other.first.expr.product(other.second.expr))
 
 operator fun <A> KSet<A>.minus(other: KSet<A>): KSet<A> =
@@ -45,10 +45,10 @@ operator fun <A> KSet<A>.minus(other: KSet<A>): KSet<A> =
 infix fun <A> KSet<A>.diff(other: KSet<A>): KSet<A> =
   this - other
 
-infix fun <A, B> KSet<Pair<A, B>>.minus(other: Pair<KExpr<A>, KExpr<B>>): KSet<Pair<A, B>> =
-  KSet(this.expr.plus(other.first.expr.product(other.second.expr)))
+// infix fun <A, B> KSet<Pair<A, B>>.minus(other: Pair<KExpr<A>, KExpr<B>>): KSet<Pair<A, B>> =
+//   KSet(this.expr.plus(other.first.expr.product(other.second.expr)))
 
-infix fun <A, B> KSet<Pair<A, B>>.minus(other: Pair<KSet<A>, KSet<B>>): KSet<Pair<A, B>> =
+operator fun <A, B> KSet<Pair<A, B>>.minus(other: Pair<KSet<A>, KSet<B>>): KSet<Pair<A, B>> =
   this - KSet(other.first.expr.product(other.second.expr))
 
 infix fun <A> KSet<A>.`&`(other: KSet<A>): KSet<A> =
@@ -93,6 +93,15 @@ operator fun <A, B> KRelation<A, B>.get(other: KSet<A>): KSet<B> =
   other / this
 
 // functions to create relations
+
+val <A, B> KSet<Map<A, B>>.asRelation: KRelation<A, B>
+  get() = KRelation(this.expr)
+
+val <A, B> KSet<Map<A, Set<B>>>.asRelationSet: KRelation<A, B>
+  get() = KRelation(this.expr)
+
+val <A, B> KSet<Map<A, B?>>.asRelationNullable: KRelation<A, B>
+  get() = KRelation(this.expr)
 
 infix fun <A, B> KSet<A>.`--#`(other: KSet<B>): KRelation<A, B> =
   KRelation(this.expr.product(other.expr))

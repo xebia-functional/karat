@@ -111,6 +111,20 @@ open class KModuleBuilder: ReflectedModule {
                 else -> setOf(it)
               }
             }
+          ty?.isSubclassOf(Map::class) == true -> {
+            findSet(ret.arguments[0].type?.classifier as? KClass<*>)?.let { k ->
+              val v = ret.arguments[1].type
+              val vTy = v?.classifier as? KClass<*>
+              when {
+                v?.isMarkedNullable == true ->
+                  findSet(vTy)?.let { k `any --# lone` it }
+                vTy?.isSubclassOf(Set::class) == true ->
+                  findSet(ret.arguments.firstOrNull()?.type?.classifier as? KClass<*>)?.let { k `--#` it }
+                else ->
+                  findSet(vTy)?.let { k `any --# one` it }
+              }
+            }
+          }
           else ->
             findSet(ty)
         }

@@ -74,6 +74,9 @@ fun KFormula.ifThen(ifTrue: KFormula, ifFalse: KFormula): KFormula =
 infix fun <A> KExpr<A>.`==`(other: KExpr<A>): KFormula =
   KFormula(this.expr.equal(other.expr))
 
+infix fun <A> KExpr<A>.`!=`(other: KExpr<A>): KFormula =
+  not(KFormula(this.expr.equal(other.expr)))
+
 infix fun <A> KExpr<A>.`in`(other: KSet<A>): KFormula =
   KFormula(this.expr.`in`(other.expr))
 
@@ -103,6 +106,19 @@ fun <A, B> `for`(
   val arg1 = x.second.arg(x.first)
   val arg2 = y.second.arg(y.first)
   return KFormula(op.make(null, null, listOf(arg1.decl, arg2.decl), block(arg1, arg2).expr))
+}
+
+fun <A, B, C> `for`(
+  op: ExprQt.Op,
+  x: Pair<String, KSet<A>>,
+  y: Pair<String, KSet<B>>,
+  z: Pair<String, KSet<C>>,
+  block: (KArg<A>, KArg<B>, KArg<C>) -> KFormula
+): KFormula {
+  val arg1 = x.second.arg(x.first)
+  val arg2 = y.second.arg(y.first)
+  val arg3 = z.second.arg(z.first)
+  return KFormula(op.make(null, null, listOf(arg1.decl, arg2.decl, arg3.decl), block(arg1, arg2, arg3).expr))
 }
 
 fun <A, B> `for`(
@@ -157,3 +173,25 @@ fun <A, B> forSome(
   t2: KSet<B>,
   fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
 ): KFormula = `for`(ExprQt.Op.SOME, t1, t2, fn)
+
+fun <A> forNo(
+  x: Pair<String, KSet<A>>,
+  block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.NO, x, block)
+
+fun <A> forNo(
+  t1: KSet<A>,
+  fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
+): KFormula = `for`(ExprQt.Op.NO, t1, fn)
+
+fun <A, B> forNo(
+  x: Pair<String, KSet<A>>,
+  y: Pair<String, KSet<B>>,
+  block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.NO, x, y, block)
+
+fun <A, B> forNo(
+  t1: KSet<A>,
+  t2: KSet<B>,
+  fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
+): KFormula = `for`(ExprQt.Op.NO, t1, t2, fn)

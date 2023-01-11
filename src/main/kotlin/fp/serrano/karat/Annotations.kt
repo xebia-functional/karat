@@ -24,11 +24,11 @@ annotation class reflect
 // - any other -> one
 
 // cardinalities for set-based fields
-@Target(AnnotationTarget.PROPERTY)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.TYPE)
 annotation class lone
-@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY, AnnotationTarget.TYPE)
 annotation class one
-@Target(AnnotationTarget.PROPERTY)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.TYPE)
 annotation class some
 
 @Target(AnnotationTarget.CLASS)

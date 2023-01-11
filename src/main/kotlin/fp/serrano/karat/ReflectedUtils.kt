@@ -83,6 +83,14 @@ inline fun <reified A: Any, reified B: Any> ReflectedModule.`for`(
   noinline block: (KArg<A>, KArg<B>) -> KFormula
 ): KFormula = `for`(op, x to set(A::class), y to set(B::class), block)
 
+inline fun <reified A: Any, reified B: Any, reified C: Any> ReflectedModule.`for`(
+  op: ExprQt.Op,
+  x: String,
+  y: String,
+  z: String,
+  noinline block: (KArg<A>, KArg<B>, KArg<C>) -> KFormula
+): KFormula = `for`(op, x to set(A::class), y to set(B::class), z to set(C::class), block)
+
 inline fun <reified A: Any> ReflectedModule.forAll(
   x: String,
   noinline block: (KArg<A>) -> KFormula
@@ -107,6 +115,10 @@ inline fun <reified A: Any, reified B: Any> ReflectedModule.forAll(
   noinline block: (KArg<A>, KArg<B>) -> KFormula
 ): KFormula = `for`(ExprQt.Op.ALL, nextUnique(A::class), nextUnique(B::class), block)
 
+inline fun <reified A: Any, reified B: Any, reified C: Any> ReflectedModule.forAll(
+  noinline block: (KArg<A>, KArg<B>, KArg<C>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ALL, nextUnique(A::class), nextUnique(B::class), nextUnique(C::class), block)
+
 inline fun <reified A: Any> ReflectedModule.forSome(
   x: String,
   noinline block: (KArg<A>) -> KFormula
@@ -130,3 +142,19 @@ inline fun <reified A: Any, reified B: Any> ReflectedModule.forSome(
 inline fun <reified A: Any, reified B: Any> ReflectedModule.forSome(
   noinline block: (KArg<A>, KArg<B>) -> KFormula
 ): KFormula = `for`(ExprQt.Op.SOME, nextUnique(A::class), nextUnique(B::class), block)
+
+inline fun <reified A: Any, reified B: Any, reified C: Any> ReflectedModule.forSome(
+  noinline block: (KArg<A>, KArg<B>, KArg<C>) -> KFormula
+): KFormula = `for`(ExprQt.Op.SOME, nextUnique(A::class), nextUnique(B::class), nextUnique(C::class), block)
+
+inline fun <reified A: Any> ReflectedModule.forNo(
+  noinline block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.NO, nextUnique(A::class), block)
+
+inline fun <reified A: Any, reified B: Any> ReflectedModule.forNo(
+  noinline block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.NO, nextUnique(A::class), nextUnique(B::class), block)
+
+inline fun <reified A: Any, reified B: Any, reified C: Any> ReflectedModule.forNo(
+  noinline block: (KArg<A>, KArg<B>, KArg<C>) -> KFormula
+): KFormula = `for`(ExprQt.Op.NO, nextUnique(A::class), nextUnique(B::class), nextUnique(C::class), block)
