@@ -2,6 +2,8 @@ package fp.serrano.karat.ast
 
 import edu.mit.csail.sdg.ast.ExprQt
 import fp.serrano.karat.ReflectedModule
+import fp.serrano.karat.set
+import kotlin.reflect.typeOf
 
 // temporal formulae
 
@@ -110,7 +112,7 @@ class KTemporalFormulaBuilder {
   inline fun <reified A: Any> ReflectedModule.transition(
     name: String? = null,
     noinline block: (KArg<A>) -> KFormula
-  ): Unit = transition(nextUnique(A::class) to set(A::class), block)
+  ): Unit = transition(nextUnique(typeOf<A>()) to set<A>(), block)
 
   fun <A> transition(
     t1: KSet<A>,
@@ -121,7 +123,7 @@ class KTemporalFormulaBuilder {
 
   inline fun <reified A: Any> ReflectedModule.transition1(
     fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
-  ): Unit = transition(set(A::class), fn)
+  ): Unit = transition(set<A>(), fn)
 
   fun <A, B> transition(
     x: Pair<String, KSet<A>>,
@@ -134,7 +136,7 @@ class KTemporalFormulaBuilder {
   inline fun <reified A: Any, reified B: Any> ReflectedModule.transition(
     name: String? = null,
     noinline block: (KArg<A>, KArg<B>) -> KFormula
-  ): Unit = transition(nextUnique(A::class) to set(A::class), nextUnique(B::class) to set(B::class), block)
+  ): Unit = transition(nextUnique(typeOf<A>()) to set<A>(), nextUnique(typeOf<B>()) to set<B>(), block)
 
   fun <A, B> transition(
     t1: KSet<A>,
@@ -146,5 +148,5 @@ class KTemporalFormulaBuilder {
 
   inline fun <reified A: Any, reified B: Any> ReflectedModule.transition2(
     fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
-  ): Unit = transition(set(A::class), set(B::class), fn)
+  ): Unit = transition(set<A>(), set<B>(), fn)
 }

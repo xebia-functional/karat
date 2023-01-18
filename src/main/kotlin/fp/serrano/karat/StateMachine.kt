@@ -7,10 +7,17 @@ import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.primaryConstructor
+import kotlin.reflect.full.starProjectedType
 
 fun interface StateMachine {
   fun ReflectedModule.execute(): KFormula
 }
+
+inline fun <reified A: StateMachine> KModuleBuilder.reflectMachine(
+  skip: Boolean = true,
+  transitionSigName: String = "Transition",
+  skipName: String = "Skip"
+) = reflectMachine(A::class, skip, transitionSigName, skipName)
 
 fun <A: StateMachine> KModuleBuilder.reflectMachine(
   klass: KClass<A>,
@@ -25,11 +32,11 @@ fun <A: StateMachine> KModuleBuilder.reflectMachine(
   val skipFormula = this@reflectMachine.build().skip()
 
   // 1. declare the top of the hierarchy
-  val newSig = KPrimSig(klass, klass.simpleName!!, Attr.ABSTRACT)
-  recordSig(klass, newSig)
+  val newSig = KPrimSig<A>(klass.simpleName!!, Attr.ABSTRACT)
+  recordSig(klass.starProjectedType, newSig)
 
   // 2. declare a single element to hold the current transition
-  val stateSig = KSubsetSig(klass, transitionSigName, newSig, Attr.ONE, Attr.VARIABLE)
+  val stateSig = KSubsetSig<A>(transitionSigName, newSig, Attr.ONE, Attr.VARIABLE)
   recordSig(stateSig)
   val currentStateRef = stateSig
 
@@ -44,12 +51,12 @@ fun <A: StateMachine> KModuleBuilder.reflectMachine(
 
   // 4. declare each of the others
   klass.sealedSubclasses.forEach { transitionKlass ->
-    val transitionSig =
+    val transitionSig: KPrimSig<Any> =
       if (transitionKlass.objectInstance == null)
-        KPrimSig(transitionKlass, transitionKlass.simpleName!!, extends = newSig)
+        KPrimSig(transitionKlass.simpleName!!, extends = newSig)
       else
-        KPrimSig(transitionKlass, transitionKlass.simpleName!!, extends = newSig, Attr.ONE)
-    recordSig(transitionKlass, transitionSig)
+        KPrimSig(transitionKlass.simpleName!!, extends = newSig, Attr.ONE)
+    recordSig(transitionKlass.starProjectedType, transitionSig)
 
     if (transitionKlass.hasAnnotation<initial>()) {
       // if it's initial just execute the object
@@ -69,7 +76,7 @@ fun <A: StateMachine> KModuleBuilder.reflectMachine(
         }
 
         val sig =
-          findSet(ret.arguments.firstOrNull()?.type?.classifier as? KClass<*>)
+          findSet(ret.arguments.firstOrNull()?.type)
             ?: throw IllegalArgumentException("cannot reflect type $ret")
 
         val field = transitionSig.field(property.name!!, sig)
@@ -78,7 +85,7 @@ fun <A: StateMachine> KModuleBuilder.reflectMachine(
       // and then generate the transition
       val inner = innerForSome(properties, transitionKlass, currentStateRef)
       transition {
-        inner and (currentStateRef `in` set(transitionKlass))
+        inner and (currentStateRef `in` set(transitionKlass.starProjectedType))
       }
     }
   }

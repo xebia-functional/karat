@@ -7,19 +7,21 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.reflect.*
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.*
+import kotlin.reflect.KTypeProjection.*
 
 fun module(block: KModuleBuilder.() -> Unit): KModule =
   KModuleBuilder().also(block).build()
 
 open class KModuleBuilder: ReflectedModule {
-  val sigs: MutableList<KSig<*>> = mutableListOf()
-  val facts: MutableList<KFormula> = mutableListOf()
+  private val sigs: MutableList<KSig<*>> = mutableListOf()
+  private val facts: MutableList<KFormula> = mutableListOf()
 
+  data class ReflectedType(val ty: KClass<*>, val args: List<ReflectedType>)
   data class ReflectedSig<A>(val sig: KSig<A>, val fields: MutableMap<KProperty1<*, *>, KField<*, *>> = mutableMapOf())
-  val reflectedSigs: MutableMap<KClass<*>, ReflectedSig<*>> = mutableMapOf()
-  val reflectedGlobals: MutableMap<Method, KSig<*>> = mutableMapOf()
+  private val reflectedSigs: MutableMap<ReflectedType, ReflectedSig<*>> = mutableMapOf()
+  private val reflectedGlobals: MutableMap<Method, KSig<*>> = mutableMapOf()
 
-  var unique: AtomicLong = AtomicLong(0L)
+  private var unique: AtomicLong = AtomicLong(0L)
 
   fun sig(newSig: KSig<*>) {
     sigs(newSig)
@@ -28,8 +30,14 @@ open class KModuleBuilder: ReflectedModule {
     sigs.addAll(newSigs)
   }
 
-  override fun nextUnique(klass: KClass<*>): String {
-    val n = klass.simpleName ?: "var"
+  private val KType.reflected: ReflectedType
+    get() = ReflectedType(klass!!, arguments.map { it.type?.reflected!! })
+
+  val KType.klass: KClass<*>?
+    get() = classifier as? KClass<*>?
+
+  override fun nextUnique(type: KType): String {
+    val n = type.klass?.simpleName ?: "var"
     val i = unique.incrementAndGet()
     return "__${n}__$i"
   }
@@ -38,8 +46,8 @@ open class KModuleBuilder: ReflectedModule {
     sig(newSig)
   }
 
-  internal fun recordSig(klass: KClass<*>, newSig: KSig<*>) {
-    reflectedSigs[klass] = ReflectedSig(newSig)
+  internal fun recordSig(type: KType, newSig: KSig<*>) {
+    reflectedSigs[type.reflected] = ReflectedSig(newSig)
     recordSig(newSig)
   }
 
@@ -48,48 +56,85 @@ open class KModuleBuilder: ReflectedModule {
     recordSig(newSig)
   }
 
-  fun reflect(vararg klasses: KClass<*>) =
-    reflect(false, *klasses)
+  fun reflect(vararg types: KType) =
+    reflect(false, *types)
 
-  fun reflect(reflectAll: Boolean, vararg klasses: KClass<*>) {
-    klasses.forEach { reflectClassAsSig(it) }
-    klasses.forEach { reflectClassFields(reflectAll, it) }
-    klasses.forEach { reflectClassCompanionFields(it) }
-    klasses.forEach { reflectClassCompanionFacts(it) }
+  fun reflect(reflectAll: Boolean, vararg types: KType) {
+    types.forEach { reflectClassAsSig(it) }
+    types.forEach { reflectClassFields(reflectAll, it) }
+    types.forEach { reflectClassCompanionFields(it) }
+    types.forEach { reflectClassCompanionFacts(it) }
   }
 
   fun reflect(vararg properties: KProperty<*>) {
     properties.forEach { reflectProperty(it) }
   }
 
+  private fun KType.substitute(subst: Map<KTypeParameter, KTypeProjection>): KType =
+    when (val c = classifier) {
+      null -> this
+      is KTypeParameter -> subst.entries.firstOrNull { it.key.name == c.name }?.value?.type ?: this
+      is KClass<*> -> object : KType by this {
+        override val arguments: List<KTypeProjection>
+          get() = this@substitute.arguments.map { argument ->
+            argument.type?.substitute(subst)?.let { KTypeProjection.invariant(it) } ?: argument
+          }
+      }
+      else -> this
+    }
+
+  private fun KType.substitute(from: KType): KType = when (val c = from.klass) {
+    null -> this
+    else -> {
+      val subst = c.typeParameters.zip(from.arguments).toMap()
+      this.substitute(subst)
+    }
+  }
+
   // step 1, generate all signatures
-  private fun reflectClassAsSig(klass: KClass<*>) {
-    // a. find the attributes
+  private fun reflectClassAsSig(type: KType) {
+    // 0. checks:
+    //    - we have a class
+    val klass = checkNotNull(type.klass)
+    //    - all the arguments are classes themselves (no weird variances)
+    type.arguments.forEach {
+      checkNotNull(it.type?.klass)
+      check(it.variance == null || it.variance == KVariance.INVARIANT)
+    }
+    // a. create name by smashing together the names
+    val name = when (type.arguments.size) {
+      0 -> klass.simpleName!!
+      else -> "${klass.simpleName!!}<${type.arguments.joinToString(separator = ",") { it.type?.klass?.simpleName!! }}>"
+    }
+    // b. find the attributes
     val attribs = listOfNotNull(
       (Attr.ABSTRACT)?.takeIf { klass.hasAnnotation<abstract>() },
       (Attr.ONE)?.takeIf { klass.hasAnnotation<one>() || klass.hasAnnotation<element>() || klass.objectInstance != null },
       (Attr.VARIABLE)?.takeIf { klass.hasAnnotation<variable>() }
     )
     val isSubset = klass.hasAnnotation<subset>() || klass.hasAnnotation<element>()
-    // b. find any possible super-class
+    // c. find any possible super-class
     //    rule for now: superclasses must be reflected before
-    val superSig = klass.supertypes.firstNotNullOfOrNull { ty ->
-      (ty.classifier as? KClass<*>)?.let { reflectedSigs[it]?.sig }
-    }
-    // c. generate the thing
-    val newSig = when {
-      isSubset -> KSubsetSig(klass, klass.simpleName!!, superSig!!, *attribs.toTypedArray())
-      superSig == null -> KPrimSig(klass, klass.simpleName!!, *attribs.toTypedArray())
-      superSig is KPrimSig<*> -> KPrimSig(klass, klass.simpleName!!, superSig, *attribs.toTypedArray())
+    val superSig =
+      klass.supertypes
+        .map { it.substitute(type) }
+        .firstNotNullOfOrNull { reflectedSigs[it.reflected]?.sig }
+    // d. generate the thing
+    // at this point we don't care about the generic argument, so we use Any?
+    val newSig: KSig<Any?> = when {
+      isSubset -> KSubsetSig(name, superSig!!, *attribs.toTypedArray())
+      superSig == null -> KPrimSig(name, *attribs.toTypedArray())
+      superSig is KPrimSig<*> -> KPrimSig(name, superSig, *attribs.toTypedArray())
       else -> throw IllegalArgumentException("non-subset signatures must extend a non-subset one")
     }
-    // d. record it
-    recordSig(klass, newSig)
+    // e. record it
+    recordSig(type, newSig)
   }
 
   // step 2, generate all fields
-  private fun reflectClassFields(reflectAll: Boolean, klass: KClass<*>) {
-    val k = reflectedSigs[klass]!!  // should never fail, we've just added it
+  private fun reflectClassFields(reflectAll: Boolean, type: KType) {
+    val k = reflectedSigs[type.reflected]!!  // should never fail, we've just added it
+    val klass = type.klass!!
     klass.declaredMemberProperties
       // a. only the reflected ones
       .filter {
@@ -97,13 +142,12 @@ open class KModuleBuilder: ReflectedModule {
       }
       .forEach { property ->
         // b. figure out the type
-        val ret = property.returnType
-        val ty = ret.classifier as? KClass<*>
+        val ret = property.returnType.substitute(type)
         val sigTy: KSet<*>? = when {
-          property.returnType.isMarkedNullable ->
-            findSet(ty)?.let { loneOf(it) }
-          ty?.isSubclassOf(Set::class) == true ->
-            findSet(ret.arguments.firstOrNull()?.type?.classifier as? KClass<*>)?.let {
+          ret.isMarkedNullable ->
+            findSet(ret)?.let { loneOf(it) }
+          ret.klass?.isSubclassOf(Set::class) == true ->
+            findSet(ret.arguments.firstOrNull()?.type)?.let {
               when {
                 property.hasAnnotation<lone>() -> loneOf(it)
                 property.hasAnnotation<one>() -> oneOf(it)
@@ -111,22 +155,25 @@ open class KModuleBuilder: ReflectedModule {
                 else -> setOf(it)
               }
             }
-          ty?.isSubclassOf(Map::class) == true -> {
-            findSet(ret.arguments[0].type?.classifier as? KClass<*>)?.let { k ->
+          ret.klass?.isSubclassOf(List::class) == true ->
+            findSet(ret.arguments.firstOrNull()?.type)?.let {
+              seq(it)
+            }
+          ret.klass?.isSubclassOf(Map::class) == true -> {
+            findSet(ret.arguments[0].type)?.let { k ->
               val v = ret.arguments[1].type
-              val vTy = v?.classifier as? KClass<*>
               when {
                 v?.isMarkedNullable == true ->
-                  findSet(vTy)?.let { k `any --# lone` it }
-                vTy?.isSubclassOf(Set::class) == true ->
-                  findSet(ret.arguments.firstOrNull()?.type?.classifier as? KClass<*>)?.let { k `--#` it }
+                  findSet(v)?.let { k `any --# lone` it }
+                v?.klass?.isSubclassOf(Set::class) == true ->
+                  findSet(ret.arguments.firstOrNull()?.type)?.let { k `--#` it }
                 else ->
-                  findSet(vTy)?.let { k `any --# one` it }
+                  findSet(v)?.let { k `any --# one` it }
               }
             }
           }
           else ->
-            findSet(ty)
+            findSet(ret)
         }
         when (sigTy) {
           null -> throw IllegalArgumentException("cannot reflect type $ret")
@@ -143,23 +190,22 @@ open class KModuleBuilder: ReflectedModule {
   }
 
   // step 3, add global fields
-  private fun reflectClassCompanionFields(klass: KClass<*>) {
-    val companionKlass = klass.companionObject
-    val companionValue = klass.companionObjectInstance
+  private fun reflectClassCompanionFields(type: KType) {
+    val companionKlass = type.klass!!.companionObject
+    val companionValue = type.klass!!.companionObjectInstance
     if (companionKlass != null && companionValue != null) {
-      companionKlass.declaredMemberProperties.forEach { reflectProperty(it)}
+      companionKlass.declaredMemberProperties.forEach { reflectProperty(it) }
     }
   }
 
   private fun reflectProperty(property: KProperty<*>) {
     val ret = property.returnType
-    val ty = ret.classifier as? KClass<*>
     val sigTy: Pair<List<Attr>, KSig<*>>? = when {
       property.returnType.isMarkedNullable ->
-        findSet(ty)?.let { listOf(Attr.LONE) to it }
+        findSet(ret)?.let { listOf(Attr.LONE) to it }
 
-      ty?.isSubclassOf(Set::class) == true ->
-        findSet(ret.arguments.firstOrNull()?.type?.classifier as? KClass<*>)?.let {
+      ret.klass?.isSubclassOf(Set::class) == true ->
+        findSet(ret.arguments.firstOrNull()?.type)?.let {
           when {
             property.hasAnnotation<lone>() -> listOf(Attr.LONE) to it
             property.hasAnnotation<one>() -> listOf(Attr.ONE) to it
@@ -168,8 +214,11 @@ open class KModuleBuilder: ReflectedModule {
           }
         }
 
+      ret.klass?.isSubclassOf(List::class) == true ->
+        throw IllegalArgumentException("List cannot be used within a property")
+
       else ->
-        findSet(ty)?.let { listOf(Attr.ONE) to it }
+        findSet(ret)?.let { listOf(Attr.ONE) to it }
     }
     when (sigTy) {
       null -> throw IllegalArgumentException("cannot reflect type $ret")
@@ -186,10 +235,10 @@ open class KModuleBuilder: ReflectedModule {
 
 
   // step 4, add facts
-  private fun reflectClassCompanionFacts(klass: KClass<*>) {
-    val k = reflectedSigs[klass]!!  // should never fail, we've just added it
-    val companionKlass = klass.companionObject
-    val companionValue = klass.companionObjectInstance
+  private fun reflectClassCompanionFacts(type: KType) {
+    val k = reflectedSigs[type.reflected]!!  // should never fail, we've just added it
+    val companionKlass = type.klass!!.companionObject
+    val companionValue = type.klass!!.companionObjectInstance
     if (companionKlass != null && companionValue != null) {
       companionKlass.declaredMemberExtensionFunctions
         .forEach {
@@ -197,13 +246,13 @@ open class KModuleBuilder: ReflectedModule {
           val ext = it.extensionReceiverParameter
           when {
             ext == null -> { }
-            (ext.type.classifier as? KClass<*>)?.isSubclassOf(InstanceFact::class) == true ->
-              when (val newFact = it.call(companionValue, instanceFactBuilder(klass))) {
+            ext.type.klass?.isSubclassOf(InstanceFact::class) == true ->
+              when (val newFact = it.call(companionValue, instanceFactBuilder(type))) {
                 null -> { /* do nothing */ }
                 is KFormula -> k.sig.fact { newFact }
                 else -> throw IllegalArgumentException("instance fact returns type ${newFact::class.simpleName}")
               }
-            (ext.type.classifier as? KClass<*>)?.isSubclassOf(Fact::class) == true ->
+            ext.type.klass?.isSubclassOf(Fact::class) == true ->
               when (val newFact = it.call(companionValue, factBuilder())) {
                 null -> { /* do nothing */ }
                 is KFormula -> fact { newFact }
@@ -215,21 +264,23 @@ open class KModuleBuilder: ReflectedModule {
     }
   }
 
-  override fun <A : Any> set(klass: KClass<A>): KSig<A> =
-    findSet(klass)!!
+  override fun set(type: KType): KSig<*> =
+    findSet(type)!!
 
   @Suppress("UNCHECKED_CAST")
-  internal fun <A : Any> findSet(klass: KClass<A>?): KSig<A>? =
-    when {
-      klass == null -> null
-      klass.isSubclassOf(Int::class) -> Sigs.SIGINT
-      klass.isSubclassOf(String::class) -> Sigs.STRING
-      else -> reflectedSigs[klass]?.sig
-    } as KSig<A>?
+  internal fun findSet(type: KType?): KSig<*>? {
+    val c = type?.klass
+    return when {
+      c == null -> null
+      c.isSubclassOf(Int::class) -> Sigs.SIGINT
+      c.isSubclassOf(String::class) -> Sigs.STRING
+      else -> reflectedSigs[type.reflected]?.sig
+    }
+  }
 
   @Suppress("UNCHECKED_CAST")
   override fun <A, F> field(property: KProperty1<A, F>): KField<A, F> =
-    reflectedSigs[property.instanceParameter?.type?.classifier as KClass<*>]!!.fields[property]!! as KField<A, F>
+    reflectedSigs[property.instanceParameter?.type?.reflected]!!.fields[property]!! as KField<A, F>
 
   @Suppress("UNCHECKED_CAST")
   override fun <F> global(property: KProperty0<F>): KSet<F> =
@@ -247,9 +298,9 @@ open class KModuleBuilder: ReflectedModule {
     fact { and(formula) }
   }
 
-  private fun <A: Any> instanceFactBuilder(klass: KClass<A>): InstanceFact<A> =
-    object : InstanceFact<A>, ReflectedModule by this {
-      override val self: KThis<A> = set(klass).self()
+  private fun instanceFactBuilder(type: KType): InstanceFact<Any?> =
+    object : InstanceFact<Any?>, ReflectedModule by this {
+      override val self: KThis<Any?> = set(type).self()
     }
 
   private fun factBuilder(): Fact =

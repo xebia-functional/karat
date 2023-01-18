@@ -29,7 +29,7 @@ fun ReflectedModule.lookup(b: KArg<Book2>, n: KArg<Name2>): KSet<Addr2> =
 
 fun main() {
   execute {
-    reflect(reflectAll = true, Target2::class, Addr2::class, Name2::class, Alias2::class, Group2::class, Book2::class)
+    reflect(reflectAll = true, type<Target2>(), type<Addr2>(), type<Name2>(), type<Alias2>(), type<Group2>(), type<Book2>())
 
     check(overall = 4, scopes = listOf(exactly<Book2>(1))) {
       forAll<Book2> { b ->

@@ -36,9 +36,9 @@ data class PowerCard(
 fun main() {
   execute {
     reflect(reflectAll = true,
-      Power::class, Power.FIRE::class, Power.WATER::class, Power.AIR::class, Power.GROUND::class,
-      Name::class, Attack::class,
-      Card::class, MonsterCard::class, PowerCard::class
+      type<Power>(), type<Power.FIRE>(), type<Power.WATER>(), type<Power.AIR>(), type<Power.GROUND>(),
+      type<Name>(), type<Attack>(),
+      type<Card>(), type<MonsterCard>(), type<PowerCard>()
     )
 
     run(10) {

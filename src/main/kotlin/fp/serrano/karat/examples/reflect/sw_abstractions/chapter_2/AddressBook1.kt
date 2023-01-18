@@ -46,7 +46,7 @@ fun ReflectedModule.addLocal(): KFormula =
 
 fun main() {
   execute {
-    reflect(reflectAll = true, Name::class, Address::class, Book::class)
+    reflect(reflectAll = true, type<Name>(), type<Address>(), type<Book>())
     /*
     run(overall = 3, scopes = listOf(exactly<Book>(1))) {
       forSome<Book> { b ->

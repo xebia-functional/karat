@@ -32,7 +32,7 @@ data class BuyProduct(val c: KArg<Cart>, val n: KArg<Int>): Machine {
     + forAll(set<Cart>() - c) { other ->
       stays(other / Cart::status) and stays(other / Cart::amount)
     }
-    + stays(set(Product::class) / Product::available)
+    + stays(set<Product>() / Product::available)
   }
 }
 data class CheckOut(val c: KArg<Cart>): Machine {
@@ -44,17 +44,17 @@ data class CheckOut(val c: KArg<Cart>): Machine {
     + forAll(set<Cart>() - c) { other ->
       stays(other / Cart::status) and stays(other / Cart::amount)
     }
-    + stays(set(Product::class) / Product::available)
+    + stays(set<Product>() / Product::available)
   }
 }
 
 fun main() {
   execute {
     reflect(
-      Status::class, Status.Open::class, Status.CheckedOut::class,
-      Product::class, Cart::class
+      type<Status>(), type<Status.Open>(), type<Status.CheckedOut>(),
+      type<Product>(), type<Cart>()
     )
-    reflectMachine(Machine::class)
+    reflectMachine<Machine>()
 
     run(10, 5, 10) {
       eventually {

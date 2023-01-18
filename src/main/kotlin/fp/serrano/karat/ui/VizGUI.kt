@@ -4,6 +4,8 @@ import kotlin.io.path.createTempFile
 import edu.mit.csail.sdg.alloy4.Computer
 import edu.mit.csail.sdg.alloy4viz.VizGUI
 import edu.mit.csail.sdg.translator.A4Solution
+import java.awt.event.WindowEvent
+import java.awt.event.WindowListener
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.pathString
 
@@ -22,8 +24,18 @@ fun A4Solution.visualize() {
       viz?.loadXML(xmlFilename, true)
     }
     viz = VizGUI(true, tempPath.pathString, null, computer, null, 2)
-    // at the end remove the file
-    tempPath.deleteIfExists()
+    viz.frame.addWindowListener(object: WindowListener {
+      override fun windowClosed(e: WindowEvent?) {
+        // at the end remove the file
+        tempPath.deleteIfExists()
+      }
+      override fun windowOpened(e: WindowEvent?) { }
+      override fun windowClosing(e: WindowEvent?) { }
+      override fun windowIconified(e: WindowEvent?) { }
+      override fun windowDeiconified(e: WindowEvent?) { }
+      override fun windowActivated(e: WindowEvent?) { }
+      override fun windowDeactivated(e: WindowEvent?) { }
+    })
   } else {
     println("unsatisfiable")
   }

@@ -22,7 +22,7 @@ interface SNode {
 
 fun main() {
   execute {
-    reflect(reflectAll = true, SNode::class)
+    reflect(reflectAll = true, type<SNode>())
 
     run(overall = 30, bitwidth = 3, scopes = listOf(exactly<SNode>(3))) {
       Constants.TRUE

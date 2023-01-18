@@ -21,7 +21,7 @@ data class Course(
 
 fun main() {
   execute {
-    reflect(Person::class, Course::class)
+    reflect(type<Person>(), type<Course>())
     run(4, 4, 4) {
       Constants.TRUE
     }.visualize()
