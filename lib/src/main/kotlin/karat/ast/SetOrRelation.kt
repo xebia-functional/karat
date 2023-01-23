@@ -1,6 +1,7 @@
 package karat.ast
 
 import edu.mit.csail.sdg.ast.Expr
+import edu.mit.csail.sdg.ast.ExprQt.Op
 
 // represents a set of element, possibly with a multiplicity
 open class KSet<out A>(val expr: Expr)
@@ -38,6 +39,12 @@ infix fun <A> KSet<A>.union(other: KSet<A>): KSet<A> =
 
 operator fun <A, B> KRelation<A, B>.plus(other: Pair<KSet<A>, KSet<B>>): KRelation<A, B> =
   this + KSet(other.first.expr.product(other.second.expr))
+
+fun <A, B> KRelation<A, B>.override(k: KSet<A>, v: KSet<B>): KRelation<A, B> =
+  KSet(this.expr.override(k.expr.product(v.expr)))
+
+infix fun <A, B> KRelation<A, B>.`++`(other: Pair<KSet<A>, KSet<B>>): KRelation<A, B> =
+  this.override(other.first, other.second)
 
 operator fun <A> KSet<A>.minus(other: KSet<A>): KSet<A> =
   KSet(this.expr.minus(other.expr))
@@ -120,6 +127,13 @@ infix fun <A, B, C> KRelation<A, B>.join(other: KRelation<B, C>): KRelation<A, C
 
 operator fun <A, B> KRelation<A, B>.get(other: KSet<A>): KSet<B> =
   other / this
+
+// comprehensions
+
+fun <A> KSet<A>.suchThat(pred: (KArg<A>) -> KFormula): KSet<A> {
+  val arg = this.arg("x")
+  return KSet(Op.COMPREHENSION.make(null, null, listOf(arg.decl), pred(arg).expr))
+}
 
 // functions to create relations
 

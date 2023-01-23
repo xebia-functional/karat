@@ -14,7 +14,7 @@ interface Book2 {
   val addr: Map<Name2, Set<Target2>>
 
   companion object {
-    fun InstanceFact<Book2>.noCycles(): KFormula = karat.ast.and {
+    fun InstanceFact<Book2>.noCycles(): KFormula = and {
       val addr = self / Book2::addr.asRelationSetR
       +(domain(addr) `==` self / Book2::names.flattenR)
       +forNo<Name2> { n -> n `in` n / closure(addr) }
@@ -24,7 +24,7 @@ interface Book2 {
   }
 }
 
-fun ReflectedModule.lookup(b: KArg<Book2>, n: KArg<Name2>): KSet<Addr2> =
+context(ReflectedModule) fun lookup(b: KArg<Book2>, n: KArg<Name2>): KSet<Addr2> =
   limit<_, Addr2>(n / closure(b / Book2::addr.asRelationSetR))
 
 fun main() {

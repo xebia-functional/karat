@@ -1,7 +1,19 @@
 package karat
 
+import edu.mit.csail.sdg.alloy4.Util
 import edu.mit.csail.sdg.ast.Attr
+import edu.mit.csail.sdg.parser.CompModule
+import edu.mit.csail.sdg.parser.CompUtil
 import karat.ast.*
+import karat.ast.KFunction0
+import karat.ast.KFunction1
+import karat.ast.KFunction2
+import karat.ast.KFunction3
+import karat.ast.KPredicate0
+import karat.ast.KPredicate1
+import karat.ast.KPredicate2
+import karat.ast.KPredicate3
+import java.io.File
 import java.lang.reflect.Method
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.reflect.*
@@ -31,7 +43,12 @@ open class KModuleBuilder: ReflectedModule {
   }
 
   private val KType.reflected: ReflectedType
-    get() = ReflectedType(klass!!, arguments.map { it.type?.reflected!! })
+    get() =
+      try {
+        ReflectedType(klass!!, arguments.map { it.type?.reflected!! })
+      } catch(e: NullPointerException) {
+        throw IllegalArgumentException("cannot reflect type $this")
+      }
 
   val KType.klass: KClass<*>?
     get() = classifier as? KClass<*>?
@@ -221,7 +238,8 @@ open class KModuleBuilder: ReflectedModule {
         findSet(ret)?.let { listOf(Attr.ONE) to it }
     }
     when (sigTy) {
-      null -> throw IllegalArgumentException("cannot reflect type $ret")
+      null ->
+        throw IllegalArgumentException("cannot reflect type $ret")
       else -> {
         val newProp =
           if (property is KMutableProperty<*> || property.hasAnnotation<variable>())
@@ -265,7 +283,7 @@ open class KModuleBuilder: ReflectedModule {
   }
 
   override fun set(type: KType): KSig<*> =
-    findSet(type)!!
+    findSet(type) ?: throw IllegalArgumentException("cannot find $type")
 
   internal fun findSet(type: KType?): KSig<*>? {
     val c = type?.klass
@@ -278,8 +296,8 @@ open class KModuleBuilder: ReflectedModule {
   }
 
   @Suppress("UNCHECKED_CAST")
-  override fun <A, F> field(property: KProperty1<A, F>): KField<A, F> =
-    reflectedSigs[property.instanceParameter?.type?.reflected]!!.fields[property]!! as KField<A, F>
+  override fun <A, F> field(type: KType, property: KProperty1<A, F>): KField<A, F> =
+    reflectedSigs[type.reflected]!!.fields[property]!! as KField<A, F>
 
   @Suppress("UNCHECKED_CAST")
   override fun <F> global(property: KProperty0<F>): KSet<F> =
@@ -318,4 +336,39 @@ open class KModuleBuilder: ReflectedModule {
     }
 
   fun build(): KModule = KModule(sigs.toList(), facts.toList())
+
+  private val moduleCache: MutableMap<String, KModule> = mutableMapOf()
+  override fun module(name: String): KModule? {
+    if (!moduleCache.containsKey(name)) {
+      val m = loadModule(name)
+      moduleCache[name] = KModule(
+        m.allSigs.map { KSig<Any>(it) },
+        m.allFacts.map { KFormula(it.b) },
+        m.allFunc.filter { !it.isPred }.map {
+          when (it.params().size) {
+            0 -> KFunction0<Any>(it)
+            1 -> KFunction1<Any, Any>(it)
+            2 -> KFunction2<Any, Any, Any>(it)
+            3 -> KFunction3<Any, Any, Any, Any>(it)
+            else -> throw IllegalArgumentException("functions with more than 3 arguments are not supported")
+          }
+        },
+        m.allFunc.filter { it.isPred }.map {
+          when (it.params().size) {
+            0 -> KPredicate0(it)
+            1 -> KPredicate1<Any>(it)
+            2 -> KPredicate2<Any, Any>(it)
+            3 -> KPredicate3<Any, Any, Any>(it)
+            else -> throw IllegalArgumentException("functions with more than 3 arguments are not supported")
+          }
+        }
+      )
+    }
+    return moduleCache[name]
+  }
+}
+
+fun loadModule(name: String): CompModule {
+  val newCp = "${Util.jarPrefix()}models/${name}.als".replace('/', File.separatorChar)
+  return CompUtil.parseEverything_fromFile(null, mutableMapOf(), newCp)
 }

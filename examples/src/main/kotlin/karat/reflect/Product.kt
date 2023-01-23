@@ -23,11 +23,11 @@ data class Cart(
 sealed interface Machine: StateMachine
 @initial
 object Initial: Machine {
-  override fun ReflectedModule.execute() =
+  context(ReflectedModule) override fun execute() =
     forAll { c -> c / Cart::status `==` element<Status.Open>() }
 }
 data class BuyProduct(val c: KArg<Cart>, val n: KArg<Int>): Machine {
-  override fun ReflectedModule.execute() = karat.ast.and {
+  context(ReflectedModule) override fun execute() = and {
     +(current(c / Cart::status) `==` element<Status.Open>())
     +(next(c / Cart::status) `==` element<Status.Open>())
     +stays(c / Cart::amount)
@@ -39,7 +39,7 @@ data class BuyProduct(val c: KArg<Cart>, val n: KArg<Int>): Machine {
   }
 }
 data class CheckOut(val c: KArg<Cart>): Machine {
-  override fun ReflectedModule.execute() = karat.ast.and {
+  context(ReflectedModule) override fun execute() = and {
     +(current(c / Cart::status) `==` element<Status.Open>())
     +(next(c / Cart::status) `==` element<Status.CheckedOut>())
     +stays(c / Cart::amount)

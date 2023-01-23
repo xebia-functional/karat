@@ -193,3 +193,47 @@ fun <A, B> forNo(
   t2: KSet<B>,
   fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
 ): KFormula = `for`(ExprQt.Op.NO, t1, t2, fn)
+
+fun <A> forOne(
+  x: Pair<String, KSet<A>>,
+  block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ONE, x, block)
+
+fun <A> forOne(
+  t1: KSet<A>,
+  fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
+): KFormula = `for`(ExprQt.Op.ONE, t1, fn)
+
+fun <A, B> forOne(
+  x: Pair<String, KSet<A>>,
+  y: Pair<String, KSet<B>>,
+  block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.ONE, x, y, block)
+
+fun <A, B> forOne(
+  t1: KSet<A>,
+  t2: KSet<B>,
+  fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
+): KFormula = `for`(ExprQt.Op.ONE, t1, t2, fn)
+
+fun <A> forLone(
+  x: Pair<String, KSet<A>>,
+  block: (KArg<A>) -> KFormula
+): KFormula = `for`(ExprQt.Op.LONE, x, block)
+
+fun <A> forLone(
+  t1: KSet<A>,
+  fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
+): KFormula = `for`(ExprQt.Op.LONE, t1, fn)
+
+fun <A, B> forLone(
+  x: Pair<String, KSet<A>>,
+  y: Pair<String, KSet<B>>,
+  block: (KArg<A>, KArg<B>) -> KFormula
+): KFormula = `for`(ExprQt.Op.LONE, x, y, block)
+
+fun <A, B> forLone(
+  t1: KSet<A>,
+  t2: KSet<B>,
+  fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
+): KFormula = `for`(ExprQt.Op.LONE, t1, t2, fn)

@@ -4,7 +4,7 @@ import edu.mit.csail.sdg.alloy4.Pos
 import edu.mit.csail.sdg.ast.Decl
 import edu.mit.csail.sdg.ast.ExprVar
 
-class KArg<A>(val decl: Decl): KSet<A>(decl.get()) {
+class KArg<out A>(val decl: Decl): KSet<A>(decl.get()) {
   val label: String = decl.get().label
 }
 

@@ -6,7 +6,7 @@ import kotlin.reflect.*
 import kotlin.reflect.full.*
 
 fun interface StateMachine {
-  fun ReflectedModule.execute(): KFormula
+  context(ReflectedModule) fun execute(): KFormula
 }
 
 inline fun <reified A: StateMachine> KModuleBuilder.reflectMachine(
@@ -63,19 +63,23 @@ fun <A: StateMachine> KModuleBuilder.reflectMachine(
       }
     } else {
       // if not, we need to declare the properties
-      val properties = transitionKlass.primaryConstructor!!.parameters.map { property ->
-        val ret = property.type
-        val ty = ret.classifier as? KClass<*>
-        require(ty?.isSubclassOf(KArg::class) == true) {
-          "all arguments must be KArg"
+      val properties = when {
+        transitionKlass.primaryConstructor != null -> transitionKlass.primaryConstructor!!.parameters.map { property ->
+          val ret = property.type
+          val ty = ret.classifier as? KClass<*>
+          require(ty?.isSubclassOf(KArg::class) == true) {
+            "all arguments must be KArg"
+          }
+
+          val sig =
+            findSet(ret.arguments.firstOrNull()?.type)
+              ?: throw IllegalArgumentException("cannot reflect type $ret")
+
+          val field = transitionSig.field(property.name!!, sig)
+          PropInfo(property.name!!, field, sig)
         }
-
-        val sig =
-          findSet(ret.arguments.firstOrNull()?.type)
-            ?: throw IllegalArgumentException("cannot reflect type $ret")
-
-        val field = transitionSig.field(property.name!!, sig)
-        PropInfo(property.name!!, field, sig)
+        transitionKlass.objectInstance != null -> emptyList()
+        else -> throw IllegalArgumentException("${transitionKlass.simpleName} is not a valid transition class")
       }
       // and then generate the transition
       val inner = innerForSome(properties, transitionKlass, stateSig)
@@ -92,7 +96,15 @@ data class PropInfo(val name: String, val field: KField<*, *>, val sig: KSig<*>)
 fun KModuleBuilder.innerForSome(elements: List<PropInfo>, klass: KClass<*>, currentStateRef: KSet<*>): KFormula {
   fun worker(remainingElements: List<PropInfo>, acc: List<KArg<*>>): KFormula =
     if (remainingElements.isEmpty()) {
-      with (klass.primaryConstructor!!.call(*acc.toTypedArray()) as StateMachine) { execute() }
+      val stateMachine = when {
+        klass.primaryConstructor != null ->
+          klass.primaryConstructor!!.call(*acc.toTypedArray()) as StateMachine
+        klass.objectInstance != null ->
+          klass.objectInstance as StateMachine
+        else ->
+          throw IllegalArgumentException("${klass.simpleName} is not a valid transition class")
+      }
+      with (stateMachine) { execute() }
     } else {
       val e = remainingElements.first()
       forSome(e.name to e.sig) { arg ->

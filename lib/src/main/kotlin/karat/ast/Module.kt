@@ -4,7 +4,24 @@ import edu.mit.csail.sdg.ast.ExprQt
 import edu.mit.csail.sdg.ast.Sig
 import java.util.*
 
-data class KModule(val sigs: List<KSig<*>>, val facts: List<KFormula>)
+interface ModuleLoader {
+  fun module(name: String): KModule?
+}
+
+data class KModule(
+  val sigs: List<KSig<*>>,
+  val facts: List<KFormula>,
+  val funcs: List<KFunction<*>> = emptyList(),
+  val preds: List<KPredicate> = emptyList()
+) {
+  private fun KFunctionOrPredicate.named(f: String) =
+    func.label == f || func.label == "this/$f"
+
+  fun function(f: String): KFunction<*>? =
+    funcs.firstOrNull { it.named(f) }
+  fun predicate(f: String): KPredicate? =
+    preds.firstOrNull { it.named(f) }
+}
 
 // this creates the 'skip' step for temporal formulae
 fun KModule.skip(): KFormula =
