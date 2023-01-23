@@ -34,9 +34,17 @@ fun checkOut2(c: KSet<Cart>) = and {
   +stays(c / Cart.amount)
 }
 
+fun stutter2() = and {
+  +forAll("c" to Cart) {
+    stays(it / Cart.status) and stays(it / Cart.amount)
+  }
+  +stays(Product / Product.available)
+}
+
+
 val productModule: KModule = module {
   sigs(Product, Status, Status.Open, Status.CheckedOut, Cart)
-  stateMachine(skip = true) {
+  stateMachine {
     initial {
       forAll("c" to Cart) {
           c -> c / Cart.status `==` Status.Open
@@ -44,6 +52,7 @@ val productModule: KModule = module {
     }
     transition(Cart, Sigs.SIGINT, ::addToCart2)
     transition(Cart, ::checkOut2)
+    transition { stutter2() }
   }
 }
 

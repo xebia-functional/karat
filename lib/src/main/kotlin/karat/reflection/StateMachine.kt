@@ -4,6 +4,7 @@ import edu.mit.csail.sdg.ast.Attr
 import karat.KModuleBuilder
 import karat.ast.*
 import karat.initial
+import karat.stutter
 import kotlin.reflect.*
 import kotlin.reflect.full.*
 
@@ -12,71 +13,102 @@ fun interface StateMachine {
 }
 
 inline fun <reified A: StateMachine> KModuleBuilder.reflectMachine(
-  skip: Boolean = true,
-  transitionSigName: String = "Transition",
-  skipName: String = "Skip"
-) = reflectMachine(A::class, skip, transitionSigName, skipName)
+  transitionSigName: String? = null,
+  transitionVarName: String = "Transition",
+  initialName: String = "Init",
+  stutterName: String = "Stutter"
+) {
+  val ty = typeOf<A>()
+  reflectMachine(transitionSigName ?: ty.klass?.simpleName!!, transitionVarName, initialName, stutterName, ty)
+}
 
-fun <A: StateMachine> KModuleBuilder.reflectMachine(
-  klass: KClass<A>,
-  skip: Boolean = true,
-  transitionSigName: String = "Transition",
-  skipName: String = "Skip"
-) = stateMachine(skip = false) {
-  require(klass.java.isInterface && klass.isSealed && klass.declaredMembers.isEmpty()) {
-    "only empty sealed interfaces may bed turned into state machines"
-  }
+fun KModuleBuilder.reflectMachine(
+  transitionSigName: String,
+  transitionVarName: String = "Transition",
+  initialName: String = "Init",
+  stutterName: String = "Stutter",
+  oneType: KType,
+  vararg moreTypes: KType
+) = stateMachine {
+  val types = listOf(oneType) + moreTypes.toList()
 
-  val skipFormula = this@reflectMachine.build().skip()
-
-  // 1. declare the top of the hierarchy
-  val newSig = KPrimSig<A>(klass.simpleName!!, Attr.ABSTRACT)
-  recordSig(klass.starProjectedType, newSig)
-
-  // 2. declare a single element to hold the current transition
-  val stateSig = KSubsetSig<A>(transitionSigName, newSig, Attr.ONE, Attr.VARIABLE)
-  recordSig(stateSig)
-
-  // 3. declare the skip transition
-  if (skip) {
-    val skipSig = KPrimSig<Nothing>(skipName, extends = newSig, Attr.ONE)
-    recordSig(skipSig)
-    transition {
-      skipFormula and (next(stateSig) `==` skipSig)
+  types.forEach { ty ->
+    val klass = requireNotNull(ty.klass) {
+      "only bare interfaces can be turned into state machines"
+    }
+    require(klass.java.isInterface && klass.isSealed && klass.declaredMembers.isEmpty()) {
+      "only empty sealed interfaces can be turned into state machines"
+    }
+    require(klass.typeParameters.isEmpty()) {
+      "only interfaces without parameters can be turned into state machines"
     }
   }
 
-  // 4. declare each of the others
-  klass.sealedSubclasses.forEach { transitionKlass ->
-    val transitionSig: KPrimSig<Any> =
-      if (transitionKlass.objectInstance == null)
-        KPrimSig(transitionKlass.simpleName!!, extends = newSig)
-      else
-        KPrimSig(transitionKlass.simpleName!!, extends = newSig, Attr.ONE)
-    recordSig(transitionKlass.starProjectedType, transitionSig)
+  // 1. find the different steps
+  val klasses = types.map { it.klass!! }
+  val initials = klasses.mapNotNull { klass ->
+    klass.sealedSubclasses.firstOrNull { it.hasAnnotation<initial>() }?.let { klass to it }
+  }.toMap()
+  val stutters = klasses.mapNotNull { klass ->
+    klass.sealedSubclasses.firstOrNull { it.hasAnnotation<stutter>() }?.let { klass to it }
+  }.toMap()
+  val actualTransitions = klasses.associateWith { klass ->
+    klass.sealedSubclasses.filter {
+      !it.hasAnnotation<initial>() && !it.hasAnnotation<stutter>()
+    }
+  }
 
-    if (transitionKlass.hasAnnotation<initial>()) {
-      // if it's initial just execute the object
-      when (val o = transitionKlass.objectInstance) {
-        null -> throw IllegalArgumentException("the initial transition must be an object")
-        else -> initial {
-          with(o) { execute() }
-        }
+  // 2. declare the top of the hierarchy
+  val newSig = KPrimSig<StateMachine>(transitionSigName, Attr.ABSTRACT)
+  recordSig(newSig)
+
+  // 3. declare a single element to hold the current transition
+  val stateSig = KSubsetSig<StateMachine>(transitionVarName, newSig, Attr.ONE, Attr.VARIABLE)
+  recordSig(stateSig)
+
+  // 4. declare the initial transition
+  val initialSig = KPrimSig<Nothing>(initialName, extends = newSig, Attr.ONE)
+  recordSig(initialSig)
+  initial {
+    val t = and {
+      + (current(stateSig) `==` initialSig)
+      for ((_, v) in initials) {
+        + formulaFromObject("initial", v)
       }
-    } else {
-      // if not, we need to declare the properties
+    }
+    t
+  }
+
+  // 5. declare the stutter transition
+  val stutterSig = KPrimSig<Nothing>(stutterName, extends = newSig, Attr.ONE)
+  recordSig(stutterSig)
+  transition {
+    val t = and {
+      + (next(stateSig) `==` stutterSig)
+      for ((_, v) in stutters) {
+        + formulaFromObject("stutter", v)
+      }
+    }
+    t
+  }
+
+  // 6. declare each of the others
+  actualTransitions.forEach { (klass, subclasses) ->
+    subclasses.forEach { transitionKlass ->
+      val transitionSig: KPrimSig<StateMachine> =
+        if (transitionKlass.objectInstance == null)
+          KPrimSig(transitionKlass.simpleName!!, extends = newSig)
+        else
+          KPrimSig(transitionKlass.simpleName!!, extends = newSig, Attr.ONE)
+      recordSig(transitionKlass.starProjectedType, transitionSig)
+
       val properties = when {
         transitionKlass.primaryConstructor != null -> transitionKlass.primaryConstructor!!.parameters.map { property ->
           val ret = property.type
-          val ty = ret.classifier as? KClass<*>
-          require(ty?.isSubclassOf(KArg::class) == true) {
-            "all arguments must be KArg"
+          require(ret.klass?.isSubclassOf(KArg::class) == true) { "all arguments must be KArg" }
+          val sig = requireNotNull(findSet(ret.arguments.firstOrNull()?.type)) {
+            "cannot reflect type $ret"
           }
-
-          val sig =
-            findSet(ret.arguments.firstOrNull()?.type)
-              ?: throw IllegalArgumentException("cannot reflect type $ret")
-
           val field = transitionSig.field(property.name!!, sig)
           PropInfo(property.name!!, field, sig)
         }
@@ -84,13 +116,28 @@ fun <A: StateMachine> KModuleBuilder.reflectMachine(
         else -> throw IllegalArgumentException("${transitionKlass.simpleName} is not a valid transition class")
       }
       // and then generate the transition
-      val inner = innerForSome(properties, transitionKlass, stateSig)
       transition {
-        inner and (stateSig `in` set(transitionKlass.starProjectedType))
+        val t = and {
+          // execute this step
+          + (next(stateSig) `in` set(transitionKlass.starProjectedType))
+          + innerForSome(properties, transitionKlass, next(stateSig))
+          // stutter on the rest
+          for ((_, v) in stutters.filterKeys { it != klass })
+            + formulaFromObject("stutter", v)
+        }
+        t
       }
     }
   }
 }
+
+private fun KModuleBuilder.formulaFromObject(element: String, klass: KClass<*>): KFormula {
+  requireNotNull(klass.objectInstance) { "$element must be declared as object" }
+  return with(klass.objectInstance as StateMachine) {
+    execute()
+  }
+}
+
 
 data class PropInfo(val name: String, val field: KField<*, *>, val sig: KSig<*>)
 

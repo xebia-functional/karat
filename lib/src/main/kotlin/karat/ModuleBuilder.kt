@@ -324,17 +324,8 @@ open class KModuleBuilder: ReflectedModule, ModuleLoader {
   private fun factBuilder(): Fact =
     object : Fact, ReflectedModule by this { }
 
-  fun KTemporalFormulaBuilder.skipTransition(): Unit =
-    this@KModuleBuilder.build().skipTransition()
-
-  fun stateMachine(skip: Boolean, block: KTemporalFormulaBuilder.() -> Unit) =
-    fact {
-      val t = temporal {
-        if (skip) skipTransition()
-        block()
-      }
-      t
-    }
+  fun stateMachine(block: KTemporalFormulaBuilder.() -> Unit) =
+    fact(temporal(block))
 
   fun build(): KModule = KModule(sigs.toList(), facts.toList())
 

@@ -22,10 +22,15 @@ data class Cart(
 )
 
 sealed interface Machine: StateMachine
-@initial
-object Initial: Machine {
+@initial object Initial: Machine {
   context(ReflectedModule) override fun execute() =
     forAll { c -> c / Cart::status `==` element<Status.Open>() }
+}
+@stutter object Stutter: Machine {
+  context(ReflectedModule) override fun execute(): KFormula = and {
+    +forAll { c -> stays(c / Cart::status) and stays(c / Cart::amount) }
+    +stays(set<Product>() / Product::available)
+  }
 }
 data class BuyProduct(val c: KArg<Cart>, val n: KArg<Int>): Machine {
   context(ReflectedModule) override fun execute() = and {

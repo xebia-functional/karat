@@ -96,9 +96,6 @@ class KTemporalFormulaBuilder {
     + and(checks)
   }
 
-  fun KModule.skipTransition(): Unit =
-    transition { skip() }
-
   fun <A> transition(
     x: Pair<String, KSet<A>>,
     block: (KArg<A>) -> KFormula

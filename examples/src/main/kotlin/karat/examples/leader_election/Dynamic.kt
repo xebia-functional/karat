@@ -87,7 +87,7 @@ data class Read(val n: KArg<Node>, val i: KArg<Int>): Transition {
 fun main() {
   execute {
     reflect(reflectAll = true, type<Node>())
-    reflectMachine<Transition>(transitionSigName = "Event", skipName = "Stutter")
+    reflectMachine<Transition>(transitionSigName = "Event")
 
     // find a trace which satisfies the formula
     run(overall = 30, bitwidth = 3, scopes = listOf(exactly<Node>(3))) {

@@ -33,12 +33,12 @@ fun main() {
       type<SubscriptionsService>(),
       type<Whole>()
     )
-    reflectMachine<SubscriptionsAction>()
     facts {
-      + singleEmptyPartition(element<Whole>() / Whole::subscriptionsTopic)
-      + singleEmptyPartition(element<Whole>() / Whole::eventsTopic)
-      + singleEmptyPartition(element<Whole>() / Whole::notificationsTopic)
+      +singleEmptyPartition(element<Whole>() / Whole::subscriptionsTopic)
+      +singleEmptyPartition(element<Whole>() / Whole::eventsTopic)
+      +singleEmptyPartition(element<Whole>() / Whole::notificationsTopic)
     }
+    reflectMachine<SubscriptionsAction>()
     run {
       eventually {
         some (theService.subscriptionsTopic)
