@@ -1,7 +1,7 @@
 package karat.common
 
-import karat.*
 import karat.ast.*
+import karat.reflection.*
 
 interface Id {
   val next: Id?

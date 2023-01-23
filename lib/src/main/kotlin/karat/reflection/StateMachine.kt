@@ -1,7 +1,9 @@
-package karat
+package karat.reflection
 
 import edu.mit.csail.sdg.ast.Attr
+import karat.KModuleBuilder
 import karat.ast.*
+import karat.initial
 import kotlin.reflect.*
 import kotlin.reflect.full.*
 

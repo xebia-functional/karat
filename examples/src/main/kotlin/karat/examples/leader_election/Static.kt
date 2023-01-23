@@ -1,7 +1,8 @@
-package karat.reflect.leader_election
+package karat.examples.leader_election
 
 import karat.*
 import karat.ast.*
+import karat.reflection.*
 import karat.ui.visualize
 
 // based on https://haslab.github.io/formal-software-design/protocol-design/index.html

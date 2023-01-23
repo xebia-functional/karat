@@ -64,7 +64,6 @@ fun <A> execute(
 
 data class SigScope(val sig: KSig<*>, val exactly: Boolean, val scope: Int)
 fun exactly(sig: KSig<*>, scope: Int) = SigScope(sig, true, scope)
-inline fun <reified A: Any> ReflectedModule.exactly(scope: Int) = exactly(set<A>(), scope)
 
 fun runCommand(overall: Int? = null, bitwidth: Int? = null, maxseq: Int? = null, steps: IntRange? = null, scopes: List<SigScope> = emptyList(), formula: KFormula): Command =
   buildCommand(false, overall, bitwidth, maxseq, steps, scopes, formula)

@@ -1,9 +1,6 @@
 package karat.ast
 
 import edu.mit.csail.sdg.ast.ExprQt
-import karat.ReflectedModule
-import karat.set
-import kotlin.reflect.typeOf
 
 // temporal formulae
 
@@ -109,21 +106,12 @@ class KTemporalFormulaBuilder {
     `for`(ExprQt.Op.SOME, x, block)
   }
 
-  context(ReflectedModule) inline fun <reified A: Any> transition(
-    name: String? = null,
-    noinline block: (KArg<A>) -> KFormula
-  ): Unit = transition(nextUnique(typeOf<A>()) to set<A>(), block)
-
   fun <A> transition(
     t1: KSet<A>,
     fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
   ): Unit = transition {
     `for`(ExprQt.Op.SOME, t1, fn)
   }
-
-  context(ReflectedModule) inline fun <reified A: Any> transition1(
-    fn: kotlin.reflect.KFunction1<KArg<A>, KFormula>
-  ): Unit = transition(set<A>(), fn)
 
   fun <A, B> transition(
     x: Pair<String, KSet<A>>,
@@ -133,11 +121,6 @@ class KTemporalFormulaBuilder {
     `for`(ExprQt.Op.SOME, x, y, block)
   }
 
-  context(ReflectedModule) inline fun <reified A: Any, reified B: Any> transition(
-    name: String? = null,
-    noinline block: (KArg<A>, KArg<B>) -> KFormula
-  ): Unit = transition(nextUnique(typeOf<A>()) to set<A>(), nextUnique(typeOf<B>()) to set<B>(), block)
-
   fun <A, B> transition(
     t1: KSet<A>,
     t2: KSet<B>,
@@ -145,8 +128,4 @@ class KTemporalFormulaBuilder {
   ): Unit = transition {
     `for`(ExprQt.Op.SOME, t1, t2, fn)
   }
-
-  context(ReflectedModule) inline fun <reified A: Any, reified B: Any> transition2(
-    fn: kotlin.reflect.KFunction2<KArg<A>, KArg<B>, KFormula>
-  ): Unit = transition(set<A>(), set<B>(), fn)
 }

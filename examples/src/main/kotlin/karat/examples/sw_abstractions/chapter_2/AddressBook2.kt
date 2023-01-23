@@ -1,7 +1,8 @@
-package karat.reflect.sw_abstractions.chapter_2
+package karat.examples.sw_abstractions.chapter_2
 
 import karat.*
 import karat.ast.*
+import karat.reflection.*
 import karat.ui.visualize
 
 @abstract interface Target2

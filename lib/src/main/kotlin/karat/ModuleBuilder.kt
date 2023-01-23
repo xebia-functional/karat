@@ -13,6 +13,7 @@ import karat.ast.KPredicate0
 import karat.ast.KPredicate1
 import karat.ast.KPredicate2
 import karat.ast.KPredicate3
+import karat.reflection.*
 import java.io.File
 import java.lang.reflect.Method
 import java.util.concurrent.atomic.AtomicLong
@@ -24,7 +25,7 @@ import kotlin.reflect.KTypeProjection.*
 fun module(block: KModuleBuilder.() -> Unit): KModule =
   KModuleBuilder().also(block).build()
 
-open class KModuleBuilder: ReflectedModule {
+open class KModuleBuilder: ReflectedModule, ModuleLoader {
   private val sigs: MutableList<KSig<*>> = mutableListOf()
   private val facts: MutableList<KFormula> = mutableListOf()
 
@@ -241,11 +242,11 @@ open class KModuleBuilder: ReflectedModule {
       null ->
         throw IllegalArgumentException("cannot reflect type $ret")
       else -> {
-        val newProp =
+        val newProp: KSubsetSig<Nothing> =
           if (property is KMutableProperty<*> || property.hasAnnotation<variable>())
-            KSubsetSig<Nothing>(property.name, sigTy.second, *(listOf(Attr.VARIABLE) + sigTy.first).toTypedArray())
+            KSubsetSig(property.name, sigTy.second, *(listOf(Attr.VARIABLE) + sigTy.first).toTypedArray())
           else
-            KSubsetSig<Nothing>(property.name, sigTy.second, *sigTy.first.toTypedArray())
+            KSubsetSig(property.name, sigTy.second, *sigTy.first.toTypedArray())
         recordGlobal(property, newProp)
       }
     }
@@ -346,7 +347,7 @@ open class KModuleBuilder: ReflectedModule {
         m.allFacts.map { KFormula(it.b) },
         m.allFunc.filter { !it.isPred }.map {
           when (it.params().size) {
-            0 -> KFunction0<Any>(it)
+            0 -> KFunction0(it)
             1 -> KFunction1<Any, Any>(it)
             2 -> KFunction2<Any, Any, Any>(it)
             3 -> KFunction3<Any, Any, Any, Any>(it)

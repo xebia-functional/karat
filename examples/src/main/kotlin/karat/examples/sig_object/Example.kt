@@ -1,4 +1,4 @@
-package karat.sig_object
+package karat.examples.sig_object
 
 import edu.mit.csail.sdg.ast.Attr
 import karat.*

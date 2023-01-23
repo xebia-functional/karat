@@ -1,7 +1,8 @@
-package karat.reflect.gh_alerts
+package karat.examples.gh_alerts
 
 import karat.*
 import karat.ast.*
+import karat.reflection.*
 
 @one interface SubscriptionsService {
   var database: Map<User, Set<Repo>>

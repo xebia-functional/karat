@@ -1,7 +1,6 @@
-package karat.sig_object
+package karat.examples.sig_object
 
 import edu.mit.csail.sdg.ast.Attr
-import edu.mit.csail.sdg.ast.ExprQt
 import karat.*
 import karat.ast.*
 import karat.ui.visualize
@@ -39,7 +38,7 @@ val productModule: KModule = module {
   sigs(Product, Status, Status.Open, Status.CheckedOut, Cart)
   stateMachine(skip = true) {
     initial {
-      `for`(ExprQt.Op.ALL, "c" to Cart) {
+      forAll("c" to Cart) {
           c -> c / Cart.status `==` Status.Open
       }
     }
@@ -52,7 +51,7 @@ fun main() {
   inModule(productModule) {
     run(4, 4, 4) {
       eventually {
-        `for`(ExprQt.Op.SOME, "c" to Cart) {
+        forSome("c" to Cart) {
             c -> c / Cart.status `==` Status.CheckedOut
         }
       }

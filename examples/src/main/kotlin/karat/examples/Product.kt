@@ -1,7 +1,8 @@
-package karat.reflect
+package karat.examples
 
 import karat.*
 import karat.ast.*
+import karat.reflection.*
 import karat.ui.visualize
 
 @one

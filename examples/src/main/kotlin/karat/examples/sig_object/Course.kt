@@ -1,4 +1,4 @@
-package karat.sig_object
+package karat.examples.sig_object
 
 import karat.*
 import karat.ast.*

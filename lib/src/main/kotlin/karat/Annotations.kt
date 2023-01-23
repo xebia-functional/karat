@@ -33,3 +33,5 @@ annotation class some
 
 @Target(AnnotationTarget.CLASS)
 annotation class initial
+@Target(AnnotationTarget.CLASS)
+annotation class stutter
