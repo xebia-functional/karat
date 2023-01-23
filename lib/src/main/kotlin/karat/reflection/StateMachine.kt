@@ -19,18 +19,18 @@ inline fun <reified A: StateMachine> KModuleBuilder.reflectMachine(
   stutterName: String = "Stutter"
 ) {
   val ty = typeOf<A>()
-  reflectMachine(transitionSigName ?: ty.klass?.simpleName!!, transitionVarName, initialName, stutterName, ty)
+  reflectMachine(transitionSigName ?: ty.klass?.simpleName!!, ty, transitionVarName = transitionVarName, initialName = initialName, stutterName = stutterName)
 }
 
 fun KModuleBuilder.reflectMachine(
   transitionSigName: String,
+  oneType: KType,
+  vararg moreTypes: KType,
   transitionVarName: String = "Transition",
   initialName: String = "Init",
   stutterName: String = "Stutter",
-  oneType: KType,
-  vararg moreTypes: KType
 ) = stateMachine {
-  val types = listOf(oneType) + moreTypes.toList()
+  val types = listOf(oneType) + moreTypes
 
   types.forEach { ty ->
     val klass = requireNotNull(ty.klass) {

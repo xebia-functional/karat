@@ -37,6 +37,15 @@ sealed interface Transition: StateMachine
   }
 }
 
+@stutter object Stutter: Transition {
+  context(ReflectedModule) override fun execute(): KFormula = and {
+    +forAll { n ->
+      stays(n / Node::inbox) and stays(n / Node::outbox)
+    }
+    +stays(Node.Companion::Elected)
+  }
+}
+
 data class Initiate(val n: KArg<Node>): Transition {
   context(ReflectedModule) override fun execute(): KFormula = and {
     +neverBefore { n / Node::id `in` n / Node::outbox }

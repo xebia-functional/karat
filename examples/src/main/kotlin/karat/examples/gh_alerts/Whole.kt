@@ -21,6 +21,26 @@ import karat.ui.visualize
   }
 }
 
+sealed interface WholeAction: StateMachine {
+  @initial object Initial: WholeAction {
+    context(ReflectedModule) override fun execute(): KFormula = and {
+      +one(element<Partition<SubscriptionsMessage>>())
+      +singleEmptyPartition(element<Whole>() / Whole::subscriptionsTopic)
+      +one(element<Partition<EventsMessage>>())
+      +singleEmptyPartition(element<Whole>() / Whole::eventsTopic)
+      +one(element<Partition<NotificationsMessage>>())
+      +singleEmptyPartition(element<Whole>() / Whole::notificationsTopic)
+    }
+  }
+  @stutter object Stutter: WholeAction {
+    context(ReflectedModule) override fun execute(): KFormula = and {
+      +unchangedTopic(element<Whole>() / Whole::subscriptionsTopic)
+      +unchangedTopic(element<Whole>() / Whole::eventsTopic)
+      +unchangedTopic(element<Whole>() / Whole::notificationsTopic)
+    }
+  }
+}
+
 fun main() {
   execute {
     reflect(reflectAll = true,
@@ -33,12 +53,7 @@ fun main() {
       type<SubscriptionsService>(),
       type<Whole>()
     )
-    facts {
-      +singleEmptyPartition(element<Whole>() / Whole::subscriptionsTopic)
-      +singleEmptyPartition(element<Whole>() / Whole::eventsTopic)
-      +singleEmptyPartition(element<Whole>() / Whole::notificationsTopic)
-    }
-    reflectMachine<SubscriptionsAction>()
+    reflectMachine(transitionSigName = "Action", type<WholeAction>(), type<SubscriptionsAction>())
     run {
       eventually {
         some (theService.subscriptionsTopic)
