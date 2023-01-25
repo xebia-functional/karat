@@ -19,7 +19,11 @@ interface ReflectedModule: ModuleLoader {
   infix fun <A: Any, B: A> KSet<A>.`==`(other: KType): KFormula =
     this `==` set(other)
 
-  fun nextUnique(type: KType): String
+  fun nextUnique(prefix: String): String
+  fun nextUnique(type: KType): String {
+    val n = (type.classifier as? KClass<*>?)?.simpleName ?: "var"
+    return nextUnique(n)
+  }
 }
 
 // indicates a global fact

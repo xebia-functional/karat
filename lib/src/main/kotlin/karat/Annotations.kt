@@ -1,5 +1,7 @@
 package karat
 
+import kotlin.reflect.KClass
+
 // for classes
 // - abstract represents 'abstract'
 // - one represented 'one'
@@ -35,3 +37,5 @@ annotation class some
 annotation class initial
 @Target(AnnotationTarget.CLASS)
 annotation class stutter
+@Target(AnnotationTarget.CLASS)
+annotation class stutterFor(val klass: KClass<*>)

@@ -5,6 +5,7 @@ import karat.KModuleBuilder
 import karat.ast.*
 import karat.initial
 import karat.stutter
+import karat.stutterFor
 import kotlin.reflect.*
 import kotlin.reflect.full.*
 
@@ -52,9 +53,16 @@ fun KModuleBuilder.reflectMachine(
   val stutters = klasses.mapNotNull { klass ->
     klass.sealedSubclasses.firstOrNull { it.hasAnnotation<stutter>() }?.let { klass to it }
   }.toMap()
+  val stutterFors = klasses.flatMap { klass ->
+    klass.sealedSubclasses.mapNotNull { stutterKlass ->
+      stutterKlass.findAnnotation<stutterFor>()?.klass?.let { forKlass ->
+        (klass to forKlass) to stutterKlass
+      }
+    }
+  }.toMap()
   val actualTransitions = klasses.associateWith { klass ->
     klass.sealedSubclasses.filter {
-      !it.hasAnnotation<initial>() && !it.hasAnnotation<stutter>()
+      !it.hasAnnotation<initial>() && !it.hasAnnotation<stutter>() && !it.hasAnnotation<stutterFor>()
     }
   }
 
@@ -95,11 +103,15 @@ fun KModuleBuilder.reflectMachine(
   // 6. declare each of the others
   actualTransitions.forEach { (klass, subclasses) ->
     subclasses.forEach { transitionKlass ->
+      val actionSigName = when(val enclosing = transitionKlass.java.enclosingClass) {
+        null -> transitionKlass.simpleName!!
+        else -> "${enclosing.simpleName}>${transitionKlass.simpleName!!}"
+      }
       val transitionSig: KPrimSig<StateMachine> =
         if (transitionKlass.objectInstance == null)
-          KPrimSig(transitionKlass.simpleName!!, extends = newSig)
+          KPrimSig(actionSigName, extends = newSig)
         else
-          KPrimSig(transitionKlass.simpleName!!, extends = newSig, Attr.ONE)
+          KPrimSig(actionSigName, extends = newSig, Attr.ONE)
       recordSig(transitionKlass.starProjectedType, transitionSig)
 
       val properties = when {
@@ -110,7 +122,7 @@ fun KModuleBuilder.reflectMachine(
             "cannot reflect type $ret"
           }
           val field = transitionSig.field(property.name!!, sig)
-          PropInfo(property.name!!, field, sig)
+          PropInfo(nextUnique(property.name!!), field, sig)
         }
         transitionKlass.objectInstance != null -> emptyList()
         else -> throw IllegalArgumentException("${transitionKlass.simpleName} is not a valid transition class")
@@ -122,8 +134,15 @@ fun KModuleBuilder.reflectMachine(
           + (next(stateSig) `in` set(transitionKlass.starProjectedType))
           + innerForSome(properties, transitionKlass, next(stateSig))
           // stutter on the rest
-          for ((_, v) in stutters.filterKeys { it != klass })
-            + formulaFromObject("stutter", v)
+          for (other in klasses.filter { it != klass }) {
+            when {
+              (other to klass) in stutterFors ->
+                +formulaFromObject("stutter", stutterFors[other to klass]!!)
+              other in stutters ->
+                +formulaFromObject("stutter", stutters[other]!!)
+              else -> { }
+            }
+          }
         }
         t
       }

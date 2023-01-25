@@ -54,10 +54,9 @@ open class KModuleBuilder: ReflectedModule, ModuleLoader {
   val KType.klass: KClass<*>?
     get() = classifier as? KClass<*>?
 
-  override fun nextUnique(type: KType): String {
-    val n = type.klass?.simpleName ?: "var"
+  override fun nextUnique(prefix: String): String {
     val i = unique.incrementAndGet()
-    return "__${n}__$i"
+    return "__${prefix}__$i"
   }
 
   internal fun recordSig(newSig: KSig<*>) {
@@ -184,7 +183,7 @@ open class KModuleBuilder: ReflectedModule, ModuleLoader {
                 v?.isMarkedNullable == true ->
                   findSet(v)?.let { k `any --# lone` it }
                 v?.klass?.isSubclassOf(Set::class) == true ->
-                  findSet(ret.arguments.firstOrNull()?.type)?.let { k `--#` it }
+                  findSet(v.arguments.firstOrNull()?.type)?.let { k `--#` it }
                 else ->
                   findSet(v)?.let { k `any --# one` it }
               }
@@ -194,7 +193,7 @@ open class KModuleBuilder: ReflectedModule, ModuleLoader {
             findSet(ret)
         }
         when (sigTy) {
-          null -> throw IllegalArgumentException("cannot reflect type $ret")
+          null -> throw IllegalArgumentException("cannot reflect type $ret of $type")
           else -> {
             val newProp =
               if (property is KMutableProperty<*> || property.hasAnnotation<variable>())
@@ -324,8 +323,10 @@ open class KModuleBuilder: ReflectedModule, ModuleLoader {
   private fun factBuilder(): Fact =
     object : Fact, ReflectedModule by this { }
 
-  fun stateMachine(block: KTemporalFormulaBuilder.() -> Unit) =
-    fact(temporal(block))
+  fun stateMachine(block: KTemporalFormulaBuilder.() -> Unit) {
+    val formula = temporal(block)
+    fact(formula)
+  }
 
   fun build(): KModule = KModule(sigs.toList(), facts.toList())
 

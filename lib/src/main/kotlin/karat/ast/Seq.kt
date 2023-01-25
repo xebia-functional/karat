@@ -27,3 +27,6 @@ context(ModuleLoader) fun <A> rest(seq: KSet<List<A>>): KSet<List<A>> =
 
 context(ModuleLoader) fun <A> setAt(seq: KSet<List<A>>, i: KSet<Int>, e: KSet<A>): KSet<List<A>> =
   (SeqUniv.function("setAt")!! as KFunction3<List<A>, Int, A, List<A>>).invoke(seq, i, e)
+
+context(ModuleLoader) fun <A> elements(seq: KSet<List<A>>): KSet<A> =
+  (SeqUniv.function("elems")!! as KFunction1<List<A>, A>).invoke(seq)

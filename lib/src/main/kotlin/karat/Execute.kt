@@ -18,7 +18,14 @@ interface Execute {
     check(overall, bitwidth, maxseq, steps, scopes, formula())
 }
 
-data class ExecuteWithModule(val module: KModule, val options: A4Options, val reporter: A4Reporter = A4Reporter.NOP):
+object ConsoleReporter: A4Reporter() {
+  override fun solve(plength: Int, primaryVars: Int, totalVars: Int, clauses: Int) {
+    println("Solving for $plength steps ($totalVars vars, $clauses clauses)")
+    super.solve(plength, primaryVars, totalVars, clauses)
+  }
+}
+
+data class ExecuteWithModule(val module: KModule, val options: A4Options, val reporter: A4Reporter = ConsoleReporter):
   Execute {
   override fun run(overall: Int?, bitwidth: Int?, maxseq: Int?, steps: IntRange?, scopes: List<SigScope>, formula: KFormula): A4Solution =
     TranslateAlloyToKodkod.execute_command(
@@ -38,7 +45,7 @@ data class ExecuteWithModule(val module: KModule, val options: A4Options, val re
 
 data class ExecuteWithBuilder(
   val options: A4Options,
-  val reporter: A4Reporter = A4Reporter.NOP
+  val reporter: A4Reporter = ConsoleReporter
 ): KModuleBuilder(), Execute {
   override fun run(overall: Int?, bitwidth: Int?, maxseq: Int?, steps: IntRange?, scopes: List<SigScope>, formula: KFormula): A4Solution =
     ExecuteWithModule(build(), options, reporter).run(overall, bitwidth, maxseq, steps, scopes, formula)
@@ -50,14 +57,14 @@ data class ExecuteWithBuilder(
 fun <A> inModule(
   module: KModule,
   options: A4Options.() -> Unit = { solver = A4Options.SatSolver.SAT4J },
-  reporter: A4Reporter = A4Reporter.NOP,
+  reporter: A4Reporter = ConsoleReporter,
   @BuilderInference block: Execute.() -> A
 ): A = ExecuteWithModule(module, A4Options().also(options), reporter).run(block)
 
 @OptIn(ExperimentalTypeInference::class)
 fun <A> execute(
   options: A4Options.() -> Unit = { solver = A4Options.SatSolver.SAT4J },
-  reporter: A4Reporter = A4Reporter.NOP,
+  reporter: A4Reporter = ConsoleReporter,
   @BuilderInference block: ExecuteWithBuilder.() -> A
 ): A = ExecuteWithBuilder(A4Options().also(options), reporter).run(block)
 
