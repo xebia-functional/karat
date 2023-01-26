@@ -24,31 +24,26 @@ import karat.ui.visualize
   }
 }
 
-sealed interface WholeAction: StateMachine {
-  @initial object Initial: WholeAction {
-    context(ReflectedModule) override fun execute(): KFormula = and {
-      +singleEmptyPartition(element<Whole>() / Whole::subscriptionsTopic)
-      +singleEmptyPartition(element<Whole>() / Whole::eventsTopic)
-      +singleEmptyPartition(element<Whole>() / Whole::notificationsTopic)
-    }
+context(ReflectedModule) class WholeActions: StateMachineDefinition {
+  override fun init(): KFormula = and {
+    +singleEmptyPartition(element<Whole>() / Whole::subscriptionsTopic)
+    +singleEmptyPartition(element<Whole>() / Whole::eventsTopic)
+    +singleEmptyPartition(element<Whole>() / Whole::notificationsTopic)
   }
 
-  @stutter object Stutter: WholeAction {
-    context(ReflectedModule) override fun execute(): KFormula = and {
-      +unchangedTopic(element<Whole>() / Whole::subscriptionsTopic)
-      +unchangedTopic(element<Whole>() / Whole::eventsTopic)
-      +unchangedTopic(element<Whole>() / Whole::notificationsTopic)
-    }
+  override fun stutter(): KFormula = and {
+    +unchangedTopic(element<Whole>() / Whole::subscriptionsTopic)
+    +unchangedTopic(element<Whole>() / Whole::eventsTopic)
+    +unchangedTopic(element<Whole>() / Whole::notificationsTopic)
   }
 
-  @stutterFor(SubscriptionsAction::class) object StutterSubscription: WholeAction {
-    context(ReflectedModule) override fun execute(): KFormula = Constants.TRUE
-  }
+  @stutterFor(SubscriptionsActions::class)
+  fun stutterSubscription(): KFormula =
+    Constants.TRUE
 
-  @stutterFor(EventsAction::class) object StutterEvent: WholeAction {
-    context(ReflectedModule) override fun execute(): KFormula =
-      unchangedTopic(element<Whole>() / Whole::notificationsTopic)
-  }
+  @stutterFor(EventsActions::class)
+  fun stutterEvent(): KFormula =
+    unchangedTopic(element<Whole>() / Whole::notificationsTopic)
 }
 
 fun main() {
@@ -68,7 +63,7 @@ fun main() {
       +one(element<Partition<EventsMessage>>())
       +one(element<Partition<NotificationsMessage>>())
     }
-    reflectMachine(transitionSigName = "Action", type<WholeAction>(), type<SubscriptionsAction>(), type<EventsAction>())
+    reflectMachineFromMethods(WholeActions(), SubscriptionsActions(), EventsActions())
     run(overall = 10, steps = 2 .. 4, scopes = listOf(exactly<User>(1), exactly<Repo>(1))) {
       eventually {
         // some(element<Whole>() / Whole::eventsService / EventsService::reposToListen)

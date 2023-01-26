@@ -37,5 +37,5 @@ annotation class some
 annotation class initial
 @Target(AnnotationTarget.CLASS)
 annotation class stutter
-@Target(AnnotationTarget.CLASS)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 annotation class stutterFor(val klass: KClass<*>)

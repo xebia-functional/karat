@@ -21,7 +21,7 @@ data class Cart(
   @reflect var amount: Int
 )
 
-sealed interface Machine: StateMachine
+sealed interface Machine: StateMachineTransition
 @initial object Initial: Machine {
   context(ReflectedModule) override fun execute() =
     forAll { c -> c / Cart::status `==` element<Status.Open>() }
@@ -63,7 +63,7 @@ fun main() {
       type<Status>(), type<Status.Open>(), type<Status.CheckedOut>(),
       type<Product>(), type<Cart>()
     )
-    reflectMachine<Machine>()
+    reflectMachineFromClass<Machine>()
 
     run(10, 5, 10) {
       eventually {

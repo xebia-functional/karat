@@ -9,21 +9,23 @@ import karat.stutterFor
 import kotlin.reflect.*
 import kotlin.reflect.full.*
 
-fun interface StateMachine {
+fun interface StateMachineTransition {
   context(ReflectedModule) fun execute(): KFormula
 }
 
-inline fun <reified A: StateMachine> KModuleBuilder.reflectMachine(
+val forbiddenMethodNames: List<String> = listOf("init", "stutter")
+
+inline fun <reified A: StateMachineTransition> KModuleBuilder.reflectMachineFromClass(
   transitionSigName: String? = null,
   transitionVarName: String = "Transition",
   initialName: String = "Init",
   stutterName: String = "Stutter"
 ) {
   val ty = typeOf<A>()
-  reflectMachine(transitionSigName ?: ty.klass?.simpleName!!, ty, transitionVarName = transitionVarName, initialName = initialName, stutterName = stutterName)
+  reflectMachineFromClass(transitionSigName ?: ty.klass?.simpleName!!, ty, transitionVarName = transitionVarName, initialName = initialName, stutterName = stutterName)
 }
 
-fun KModuleBuilder.reflectMachine(
+fun KModuleBuilder.reflectMachineFromClass(
   transitionSigName: String,
   oneType: KType,
   vararg moreTypes: KType,
@@ -67,11 +69,11 @@ fun KModuleBuilder.reflectMachine(
   }
 
   // 2. declare the top of the hierarchy
-  val newSig = KPrimSig<StateMachine>(transitionSigName, Attr.ABSTRACT)
+  val newSig = KPrimSig<StateMachineTransition>(transitionSigName, Attr.ABSTRACT)
   recordSig(newSig)
 
   // 3. declare a single element to hold the current transition
-  val stateSig = KSubsetSig<StateMachine>(transitionVarName, newSig, Attr.ONE, Attr.VARIABLE)
+  val stateSig = KSubsetSig<StateMachineTransition>(transitionVarName, newSig, Attr.ONE, Attr.VARIABLE)
   recordSig(stateSig)
 
   // 4. declare the initial transition
@@ -107,7 +109,7 @@ fun KModuleBuilder.reflectMachine(
         null -> transitionKlass.simpleName!!
         else -> "${enclosing.simpleName}>${transitionKlass.simpleName!!}"
       }
-      val transitionSig: KPrimSig<StateMachine> =
+      val transitionSig: KPrimSig<StateMachineTransition> =
         if (transitionKlass.objectInstance == null)
           KPrimSig(actionSigName, extends = newSig)
         else
@@ -152,7 +154,7 @@ fun KModuleBuilder.reflectMachine(
 
 private fun KModuleBuilder.formulaFromObject(element: String, klass: KClass<*>): KFormula {
   requireNotNull(klass.objectInstance) { "$element must be declared as object" }
-  return with(klass.objectInstance as StateMachine) {
+  return with(klass.objectInstance as StateMachineTransition) {
     execute()
   }
 }
@@ -166,9 +168,9 @@ fun KModuleBuilder.innerForSome(elements: List<PropInfo>, klass: KClass<*>, curr
     if (remainingElements.isEmpty()) {
       val stateMachine = when {
         klass.primaryConstructor != null ->
-          klass.primaryConstructor!!.call(*acc.toTypedArray()) as StateMachine
+          klass.primaryConstructor!!.call(*acc.toTypedArray()) as StateMachineTransition
         klass.objectInstance != null ->
-          klass.objectInstance as StateMachine
+          klass.objectInstance as StateMachineTransition
         else ->
           throw IllegalArgumentException("${klass.simpleName} is not a valid transition class")
       }

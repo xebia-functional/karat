@@ -19,45 +19,30 @@ context(ReflectedModule) val KSet<EventsService>.evsSubscriptions: KSet<Topic<Su
 context(ReflectedModule) val KSet<EventsService>.evsEvents: KSet<Topic<EventsMessage>>
   get() = this / EventsService::eventsTopic
 
-sealed interface EventsAction: StateMachine {
-  @initial object Initial : EventsAction {
-    context(ReflectedModule) override fun execute(): KFormula =
-      no(theEventsService.reposToListen)
-  }
+context(ReflectedModule) class EventsActions: StateMachineDefinition {
+  override fun init(): KFormula = no(theEventsService.reposToListen)
+  override fun stutter(): KFormula = stays(theEventsService.reposToListen)
 
-  @stutter object Stutter : EventsAction {
-    context(ReflectedModule) override fun execute(): KFormula =
-      stays(theEventsService.reposToListen)
+  fun receiveStartListen(msg: KArg<StartListen>): KFormula = and {
+    + theEventsService.evsSubscriptions.consume(msg)
+    + (next(theEventsService.reposToListen) `==` (theEventsService.reposToListen + msg.subsRepo))
+    + unchangedTopic(theEventsService.evsEvents)
   }
-
-  data class ReceiveStartListen(val msg: KArg<StartListen>): EventsAction {
-    context(ReflectedModule) override fun execute(): KFormula = and {
-      + theEventsService.evsSubscriptions.consume(msg)
-      + (next(theEventsService.reposToListen) `==` (theEventsService.reposToListen + msg.subsRepo))
-      + unchangedTopic(theEventsService.evsEvents)
-    }
+  fun receiveStopListen(msg: KArg<StopListen>): KFormula = and {
+    + theEventsService.evsSubscriptions.consume(msg)
+    + (next(theEventsService.reposToListen) `==` (theEventsService.reposToListen - msg.subsRepo))
+    + unchangedTopic(theEventsService.evsEvents)
   }
-
-  data class ReceiveStopListen(val msg: KArg<StopListen>): EventsAction {
-    context(ReflectedModule) override fun execute(): KFormula = and {
-      + theEventsService.evsSubscriptions.consume(msg)
-      + (next(theEventsService.reposToListen) `==` (theEventsService.reposToListen - msg.subsRepo))
-      + unchangedTopic(theEventsService.evsEvents)
-    }
-  }
-
-  data class GitHub(val repo: KArg<Repo>, val event: KArg<Event>): EventsAction {
-    context(ReflectedModule) override fun execute(): KFormula = and {
-      + stays(theEventsService.reposToListen)
-      + unchangedTopic(theEventsService.evsSubscriptions)
-      + (repo `in` theEventsService.reposToListen).ifThen(
-        ifTrue = forSome<EventsMessage> { m -> and {
-          + (m.eventsEvent `==` event)
-          + (m.eventsRepo `==` repo)
-          + theEventsService.evsEvents.send(m)
-        } },
-        ifFalse = unchangedTopic(theEventsService.evsEvents)
-      )
-    }
+  fun github(repo: KArg<Repo>, event: KArg<Event>) = and {
+    + stays(theEventsService.reposToListen)
+    + unchangedTopic(theEventsService.evsSubscriptions)
+    + (repo `in` theEventsService.reposToListen).ifThen(
+      ifTrue = forSome<EventsMessage> { m -> and {
+        + (m.eventsEvent `==` event)
+        + (m.eventsRepo `==` repo)
+        + theEventsService.evsEvents.send(m)
+      } },
+      ifFalse = unchangedTopic(theEventsService.evsEvents)
+    )
   }
 }
