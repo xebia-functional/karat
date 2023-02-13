@@ -4,9 +4,11 @@ import karat.FormulaBuilder
 
 public operator fun Formula.not(): Formula = Not(this)
 
-public fun and(formulae: List<Formula>): Formula = And(formulae)
+public fun and(formulae: List<Formula>): Formula =
+  if (formulae.isEmpty()) TRUE else And(formulae)
 public fun and(vararg formula: Formula): Formula = And(formula.toList())
-public fun or(formulae: List<Formula>): Formula = Or(formulae)
+public fun or(formulae: List<Formula>): Formula =
+  if (formulae.isEmpty()) FALSE else Or(formulae)
 public fun or(vararg formula: Formula): Formula = Or(formula.toList())
 
 public infix fun Formula.implies(then: Formula): Formula = Implies(this, then)
