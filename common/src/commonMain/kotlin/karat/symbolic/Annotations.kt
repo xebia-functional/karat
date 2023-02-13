@@ -25,6 +25,12 @@ public annotation class open
 public annotation class subset
 
 /**
+ * The class or field varies in time for symbolic execution purposes.
+ */
+@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY)
+public annotation class variable
+
+/**
  * To be applied to a companion object.
  */
 public interface Fact

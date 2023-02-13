@@ -8,10 +8,9 @@ import karat.symbolic.Expr as KaratExpr
 import karat.symbolic.Formula as KaratFormula
 import java.lang.reflect.Method
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.reflect.KProperty0
-import kotlin.reflect.KProperty1
-import kotlin.reflect.KType
-import kotlin.reflect.full.isSubclassOf
+import javax.validation.constraints.NotEmpty
+import kotlin.reflect.*
+import kotlin.reflect.full.*
 import kotlin.reflect.jvm.javaGetter
 
 public class AlloyBuilder {
@@ -41,7 +40,7 @@ public class AlloyBuilder {
 
   // translation to Alloy
 
-  internal fun KaratFormula.translate(): AlloyExpr = when (this) {
+  private fun KaratFormula.translate(): AlloyExpr = when (this) {
     is TRUE -> ExprConstant.TRUE
     is FALSE -> ExprConstant.FALSE
     is Not -> formula.translate().not()
@@ -80,7 +79,7 @@ public class AlloyBuilder {
     }
   }
 
-  internal fun Quantifier.translate(): ExprQt.Op = when (this) {
+  private fun Quantifier.translate(): ExprQt.Op = when (this) {
     Quantifier.ALL -> ExprQt.Op.ALL
     Quantifier.NO -> ExprQt.Op.NO
     Quantifier.OPTIONAL -> ExprQt.Op.LONE
@@ -88,7 +87,7 @@ public class AlloyBuilder {
     Quantifier.EXISTS -> ExprQt.Op.SOME
   }
 
-  internal fun <A> KaratExpr<A>.translate(): AlloyExpr = when (this) {
+  private fun <A> KaratExpr<A>.translate(): AlloyExpr = when (this) {
     is Flatten<*, A> -> x.translate()
     is TypeSet<A> -> set(type) ?: throw IllegalArgumentException("cannot find $type")
     is FieldRelation<*, *> -> field(type, property)
@@ -142,7 +141,23 @@ public class AlloyBuilder {
         Sig.PrimSig.SEQIDX.isSeq_arrow_lone(set(type.arguments.first().type!!))
       c.isSubclassOf(Int::class) -> Sig.PrimSig.SIGINT
       c.isSubclassOf(String::class) -> Sig.PrimSig.SIGINT
-      else -> reflectedSigs[type.reflected]?.sig
+      type.reflected in reflectedSigs -> reflectedSigs[type.reflected]!!.sig
+      else -> {
+        reflect(type.reflectedClosure(doNotVisit = reflectedSigs.keys))
+        // at this point the type should have been added
+        reflectedSigs[type.reflected]!!.sig
+      }
+    }
+  }
+
+  // call only during creation!!
+  private fun setUnsafe(type: KType?): AlloyExpr? {
+    val c = type?.klass
+    return when {
+      c == null -> null
+      c.isSubclassOf(Int::class) -> Sig.PrimSig.SIGINT
+      c.isSubclassOf(String::class) -> Sig.PrimSig.SIGINT
+      else -> reflectedSigs[type.reflected]!!.sig
     }
   }
 
@@ -151,4 +166,189 @@ public class AlloyBuilder {
 
   private fun <F> global(property: KProperty0<F>): Sig =
     reflectedGlobals[property.javaGetter]!!
+
+  private fun reflect(types: Iterable<KType>) {
+    types.forEach { reflectClassAsSig(it) }
+    types.forEach { reflectClassFields(it) }
+    types.forEach { reflectClassCompanionFields(it) }
+    // types.forEach { reflectClassCompanionFacts(it) }
+  }
+
+  // step 1, generate all signatures
+  private fun reflectClassAsSig(type: KType) {
+    // 0. checks:
+    //    - we have a class
+    val klass = checkNotNull(type.klass)
+    //    - all the arguments are classes themselves (no weird variances)
+    type.arguments.forEach {
+      checkNotNull(it.type?.klass)
+      check(it.variance == null || it.variance == KVariance.INVARIANT)
+    }
+    // a. create name by smashing together the names
+    val name = when (type.arguments.size) {
+      0 -> klass.simpleName!!
+      else -> "${klass.simpleName!!}<${type.arguments.joinToString(separator = ",") { it.type?.klass?.simpleName!! }}>"
+    }
+    // b. find the attributes
+    val attribs = listOfNotNull(
+      (Attr.ABSTRACT)?.takeIf { !klass.hasAnnotation<open>() },
+      (Attr.ONE)?.takeIf { klass.objectInstance != null },
+      (Attr.VARIABLE)?.takeIf { klass.hasAnnotation<variable>() }
+    )
+    val isSubset = klass.hasAnnotation<subset>()
+    // c. find any possible super-class
+    //    rule for now: superclasses must be reflected before
+    val superSig =
+      klass.supertypes
+        .map { it.substitute(type) }
+        .firstNotNullOfOrNull { reflectedSigs[it.reflected]?.sig }
+    // d. generate the thing
+    // at this point we don't care about the generic argument, so we use Any?
+    val newSig: Sig = when {
+      isSubset -> Sig.SubsetSig(name, listOf(superSig), *attribs.toTypedArray())
+      superSig == null -> Sig.PrimSig(name, *attribs.toTypedArray())
+      superSig is Sig.PrimSig -> Sig.PrimSig(name, superSig, *attribs.toTypedArray())
+      else -> throw IllegalArgumentException("non-subset signatures must extend a non-subset one")
+    }
+    // e. record it
+    reflectedSigs[type.reflected] = ReflectedSig(newSig)
+    sigs.add(newSig)
+  }
+
+  // step 2, generate all fields
+  private fun reflectClassFields(type: KType) {
+    val k = reflectedSigs[type.reflected]!!  // should never fail, we've just added it
+    val klass = type.klass!!
+    klass.declaredMemberProperties
+      // a. only the reflected ones
+      .filter {
+        it.hasAnnotation<reflect>()
+      }
+      .forEach { property ->
+        // b. figure out the type
+        val ret = property.returnType.substitute(type)
+        val sigTy: AlloyExpr? = when {
+          ret.isMarkedNullable ->
+            setUnsafe(ret)?.loneOf()
+          ret.klass?.isSubclassOf(Set::class) == true ->
+            setUnsafe(ret.arguments.firstOrNull()?.type)?.let {
+              when {
+                property.hasAnnotation<NotEmpty>() -> it.someOf()
+                else -> it.setOf()
+              }
+            }
+          ret.klass?.isSubclassOf(List::class) == true ->
+            setUnsafe(ret.arguments.firstOrNull()?.type)?.let {
+              Sig.PrimSig.SEQIDX.isSeq_arrow_lone(it)
+            }
+          ret.klass?.isSubclassOf(Map::class) == true -> {
+            setUnsafe(ret.arguments[0].type)?.let { k ->
+              val v = ret.arguments[1].type
+              when {
+                v?.isMarkedNullable == true ->
+                  setUnsafe(v)?.let { k.any_arrow_lone(it) }
+                v?.klass?.isSubclassOf(Set::class) == true ->
+                  setUnsafe(v.arguments.firstOrNull()?.type)?.let { k.product(it)}
+                else ->
+                  setUnsafe(v)?.let { k.any_arrow_one(it) }
+              }
+            }
+          }
+          else ->
+            setUnsafe(ret)
+        }
+        when (sigTy) {
+          null -> throw IllegalArgumentException("cannot reflect type $ret of $type")
+          else -> {
+            val newProp =
+              if (property is KMutableProperty<*> || property.hasAnnotation<variable>())
+                k.sig.addTrickyField(
+                  null, null, null, null, null,
+                  Pos.UNKNOWN, arrayOf(property.name), sigTy
+                ).first()
+              else
+                k.sig.addField(property.name, sigTy)
+            k.fields[property] = newProp
+          }
+        }
+      }
+  }
+
+  // step 3, add global fields
+  private fun reflectClassCompanionFields(type: KType) {
+    val companionKlass = type.klass!!.companionObject
+    val companionValue = type.klass!!.companionObjectInstance
+    if (companionKlass != null && companionValue != null) {
+      companionKlass.declaredMemberProperties.forEach { reflectProperty(it) }
+    }
+  }
+
+  private fun reflectProperty(property: KProperty<*>) {
+    val ret = property.returnType
+    val sigTy: Pair<List<Attr>, AlloyExpr>? = when {
+      property.returnType.isMarkedNullable ->
+        setUnsafe(ret)?.let { listOf(Attr.LONE) to it }
+
+      ret.klass?.isSubclassOf(Set::class) == true ->
+        setUnsafe(ret.arguments.firstOrNull()?.type)?.let {
+          when {
+            property.hasAnnotation<NotEmpty>() -> listOf(Attr.SOME) to it
+            else -> emptyList<Attr>() to it
+          }
+        }
+
+      ret.klass?.isSubclassOf(List::class) == true ->
+        throw IllegalArgumentException("List cannot be used within a property")
+
+      else ->
+        setUnsafe(ret)?.let { listOf(Attr.ONE) to it }
+    }
+    when (sigTy) {
+      null ->
+        throw IllegalArgumentException("cannot reflect type $ret")
+      else -> {
+        val newProp: Sig.SubsetSig =
+          if (property is KMutableProperty<*> || property.hasAnnotation<variable>())
+            Sig.SubsetSig(property.name, listOfNotNull(sigTy.second as? Sig), *(listOf(Attr.VARIABLE) + sigTy.first).toTypedArray())
+          else
+            Sig.SubsetSig(property.name, listOfNotNull(sigTy.second as? Sig), *sigTy.first.toTypedArray())
+
+        reflectedGlobals[property.javaGetter!!] = newProp
+        sigs.add(newProp)
+      }
+    }
+  }
+
+  /*
+  // step 4, add facts
+  private fun reflectClassCompanionFacts(type: KType) {
+    val k = reflectedSigs[type.reflected]!!  // should never fail, we've just added it
+    val companionKlass = type.klass!!.companionObject
+    val companionValue = type.klass!!.companionObjectInstance
+    if (companionKlass != null && companionValue != null) {
+      companionKlass.declaredMemberExtensionFunctions
+        .forEach {
+          // we can have a ReflectedModule as argument
+          val ext = it.extensionReceiverParameter
+          when {
+            ext == null -> { }
+            ext.type.klass?.isSubclassOf(InstanceFact::class) == true ->
+              when (val newFact = it.call(companionValue, instanceFactBuilder(type))) {
+                null -> { /* do nothing */ }
+                is KFormula -> k.sig.fact { newFact }
+                else -> throw IllegalArgumentException("instance fact returns type ${newFact::class.simpleName}")
+              }
+            ext.type.klass?.isSubclassOf(Fact::class) == true ->
+              when (val newFact = it.call(companionValue, factBuilder())) {
+                null -> { /* do nothing */ }
+                is KFormula -> fact { newFact }
+                else -> throw IllegalArgumentException("fact returns type ${newFact::class.simpleName}")
+              }
+            else -> { }
+          }
+        }
+    }
+  }
+
+   */
 }

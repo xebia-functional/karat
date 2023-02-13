@@ -8,6 +8,7 @@ plugins {
 
 dependencies {
   implementation(projects.karatCommon)
+  implementation(libs.javax.validation)
   implementation(files("../vendor/org.alloytools.alloy.dist.jar"))
   implementation(kotlin("reflect"))
 }
