@@ -30,6 +30,11 @@ public interface FormulaBuilder<Subject, Test, Formula, Atomic : Formula> {
     or(formula.toList())
 }
 
+public fun <Subject, Test, Formula, Atomic : Formula, R> formula(
+  builder: FormulaBuilder<Subject, Test, Formula, Atomic>,
+  block: FormulaBuilder<Subject, Test, Formula, Atomic>.() -> R
+): R = block(builder)
+
 /**
  * Generic builder for sequential traces of formulae.
  * Use [trace] to turn those into regular formula

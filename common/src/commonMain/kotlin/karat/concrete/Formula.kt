@@ -3,7 +3,11 @@ package karat.concrete
 import karat.FormulaBuilder
 import karat.TraceFormulaBuilder
 
-public fun <A, R >trace(
+public fun <A, R, B> formula(
+  block: FormulaBuilder<A, (A) -> R, Formula<A, R>, Atomic<A, R>>.() -> B
+): B = karat.formula(ConcreteFormulaBuilder(), block)
+
+public fun <A, R> trace(
   block: suspend TraceFormulaBuilder<A, (A) -> R>.() -> Unit
 ): Formula<A, R> =
   karat.trace(ConcreteFormulaBuilder(), block)
