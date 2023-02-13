@@ -4,8 +4,8 @@ import kotlin.reflect.KProperty0
 import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 
-public interface Formula
-public interface Expr<out A>
+public sealed interface Formula
+public sealed interface Expr<out A>
 public typealias Relation<A, B> = Expr<Pair<A, B>>
 
 // basic forms of sets and relations
@@ -28,18 +28,27 @@ public object FALSE: Formula
 
 public data class Not(val formula: Formula): Formula
 public data class And(val formulae: List<Formula>): Formula
-public data class Or(val formula: List<Formula>): Formula
+public data class Or(val formulae: List<Formula>): Formula
 public data class Implies(val condition: Formula, val then: Formula): Formula
 public data class Iff(val condition: Formula, val then: Formula): Formula
 public data class IfThenElse(val condition: Formula, val then: Formula, val orElse: Formula): Formula
 
-public enum class Quantifier(public val alloyName: String) {
-  ALL("all"),
-  NO("no"),
-  OPTIONAL("lone"),
-  SINGLE("one"),
-  EXISTS("some")
+public enum class Quantifier {
+  ALL,
+  NO,
+  OPTIONAL,
+  SINGLE,
+  EXISTS
 }
+
+/**
+ * Used to represent an argument to a quantifier.
+ * The [D] argument allows implementation-specific
+ * information in that position.
+ */
+public data class Argument<D, A>(
+  val decl: D
+): Expr<A>
 
 public data class Quantified<A>(
   val quantifier: Quantifier,
@@ -99,18 +108,23 @@ public interface Flattener<R, A> {
   public class Nullable<A>: Flattener<A?, A>
   public class Map<A, B>: Flattener<kotlin.collections.Map<A, B>, kotlin.Pair<A, B>>
 }
+
+/**
+ * This is only needed because Kotlin's type system doesn't
+ * allow us to express that Expr<Set<A>> == Expr<A>
+ */
 public data class Flatten<R, A>(val x: Expr<R>, val f: Flattener<R, A>): Expr<A>
 
 // list operators
 
 public data class ListIsEmpty<A>(val x: Expr<List<A>>): Formula
 public data class ListFirst<A>(val x: Expr<List<A>>): Expr<A>
-public data class ListAdd<A>(val x: Expr<List<A>>, val y: Expr<A>): Expr<List<A>>
+public data class ListAdd<A>(val elt: Expr<A>, val lst: Expr<List<A>>): Expr<List<A>>
 public data class ListRest<A>(val x: Expr<List<A>>): Expr<List<A>>
 public data class ListElements<A>(val x: Expr<List<A>>): Expr<A>
 
 // integer operators
 
-public data class Number(val n: Int): Expr<Int>
+public data class NumberLiteral(val n: Int): Expr<Int>
 public enum class NumberRelation { GT, GTE, LT, LTE }
 public data class NumberComparison(val r: NumberRelation, val x: Expr<Int>, val y: Expr<Int>): Formula

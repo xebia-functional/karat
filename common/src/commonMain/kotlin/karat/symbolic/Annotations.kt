@@ -3,6 +3,13 @@ package karat.symbolic
 import kotlin.reflect.KClass
 
 /**
+ * This property should be reflected in symbolic execution
+ * (for example, when using Alloy).
+ */
+@Target(AnnotationTarget.PROPERTY)
+public annotation class reflect
+
+/**
  * There are more instances of this type
  * than those of their descendants.
  * (In Alloy this is the opposite of 'abstract').
