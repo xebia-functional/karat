@@ -350,6 +350,6 @@ public open class AlloyBuilder {
 
   private fun instanceFactBuilder(sig: Sig): InstanceFact<Any?> =
     object : InstanceFact<Any?> {
-      override val self: KaratExpr<Any?> = Argument(sig.decl.get())
+      override val self: KaratExpr<Any?> = Argument(sig.decl)
     }
 }

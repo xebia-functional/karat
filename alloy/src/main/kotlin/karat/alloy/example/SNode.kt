@@ -10,10 +10,10 @@ public interface SNode {
   @reflect public val id: Int
 
   public companion object {
-    public fun Fact.ring(): Formula = and(
-      set<SNode>().all { n -> set<SNode>() `in` n / SNode::succ.oneOrMoreSteps() },
-      set<SNode>().all { i -> (SNode::id % i).atMostOne() }
-    )
+    public fun InstanceFact<SNode>.ring(): Formula =
+      set<SNode>() `in` self / SNode::succ.oneOrMoreSteps()
+    public fun InstanceFact<SNode>.differentIds(): Formula =
+      (SNode::id % self).atMostOne()
   }
 }
 
