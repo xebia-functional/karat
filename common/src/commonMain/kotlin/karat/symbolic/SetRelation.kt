@@ -13,6 +13,8 @@ public fun <A> field(property: KProperty0<A>): Expr<A> =
 
 public infix fun <A> Expr<A>.`==`(other: Expr<A>): Formula =
   Equals(this, other)
+public infix fun <A> Expr<A>.`in`(other: Expr<A>): Formula =
+  In(this, other)
 public infix fun <A> Expr<A>.`!=`(other: Expr<A>): Formula =
   Not(Equals(this, other))
 

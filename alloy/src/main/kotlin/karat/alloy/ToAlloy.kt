@@ -13,7 +13,7 @@ import kotlin.reflect.*
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.javaGetter
 
-public class AlloyBuilder {
+public open class AlloyBuilder {
 
   // this is the actual public API
 
@@ -40,7 +40,7 @@ public class AlloyBuilder {
 
   // translation to Alloy
 
-  private fun KaratFormula.translate(): AlloyExpr = when (this) {
+  public fun KaratFormula.translate(): AlloyExpr = when (this) {
     is TRUE -> ExprConstant.TRUE
     is FALSE -> ExprConstant.FALSE
     is Not -> formula.translate().not()
@@ -70,6 +70,7 @@ public class AlloyBuilder {
     is Since -> condition.translate().since(then.translate())
     is Triggered -> condition.translate().triggered(then.translate())
     is Equals<*> -> x.translate().equal(y.translate())
+    is In<*> -> x.translate().`in`(y.translate())
     is ListIsEmpty<*> -> cache["util/sequniv"]!!["isEmpty"]!!.call(x.translate())
     is NumberComparison -> when (r) {
       NumberRelation.GT -> x.translate().gt(y.translate())
@@ -87,7 +88,7 @@ public class AlloyBuilder {
     Quantifier.EXISTS -> ExprQt.Op.SOME
   }
 
-  private fun <A> KaratExpr<A>.translate(): AlloyExpr = when (this) {
+  public fun <A> KaratExpr<A>.translate(): AlloyExpr = when (this) {
     is Flatten<*, A> -> x.translate()
     is TypeSet<A> -> set(type) ?: throw IllegalArgumentException("cannot find $type")
     is FieldRelation<*, *> -> field(type, property)
@@ -133,12 +134,10 @@ public class AlloyBuilder {
   private val reflectedSigs: MutableMap<ReflectedType, ReflectedSig> = mutableMapOf()
   private val reflectedGlobals: MutableMap<Method, Sig> = mutableMapOf()
 
-  private fun set(type: KType?): AlloyExpr? {
+  internal fun set(type: KType?): Sig? {
     val c = type?.klass
     return when {
       c == null -> null
-      c.isSubclassOf(List::class) ->
-        Sig.PrimSig.SEQIDX.isSeq_arrow_lone(set(type.arguments.first().type!!))
       c.isSubclassOf(Int::class) -> Sig.PrimSig.SIGINT
       c.isSubclassOf(String::class) -> Sig.PrimSig.SIGINT
       type.reflected in reflectedSigs -> reflectedSigs[type.reflected]!!.sig
@@ -151,7 +150,7 @@ public class AlloyBuilder {
   }
 
   // call only during creation!!
-  private fun setUnsafe(type: KType?): AlloyExpr? {
+  private fun setUnsafe(type: KType?): Sig? {
     val c = type?.klass
     return when {
       c == null -> null
@@ -171,7 +170,7 @@ public class AlloyBuilder {
     types.forEach { reflectClassAsSig(it) }
     types.forEach { reflectClassFields(it) }
     types.forEach { reflectClassCompanionFields(it) }
-    // types.forEach { reflectClassCompanionFacts(it) }
+    types.forEach { reflectClassCompanionFacts(it) }
   }
 
   // step 1, generate all signatures
@@ -191,7 +190,7 @@ public class AlloyBuilder {
     }
     // b. find the attributes
     val attribs = listOfNotNull(
-      (Attr.ABSTRACT)?.takeIf { !klass.hasAnnotation<open>() },
+      (Attr.ABSTRACT)?.takeIf { klass.hasAnnotation<abstract>() },
       (Attr.ONE)?.takeIf { klass.objectInstance != null },
       (Attr.VARIABLE)?.takeIf { klass.hasAnnotation<variable>() }
     )
@@ -318,8 +317,7 @@ public class AlloyBuilder {
       }
     }
   }
-
-  /*
+  
   // step 4, add facts
   private fun reflectClassCompanionFacts(type: KType) {
     val k = reflectedSigs[type.reflected]!!  // should never fail, we've just added it
@@ -333,15 +331,15 @@ public class AlloyBuilder {
           when {
             ext == null -> { }
             ext.type.klass?.isSubclassOf(InstanceFact::class) == true ->
-              when (val newFact = it.call(companionValue, instanceFactBuilder(type))) {
+              when (val newFact = it.call(companionValue, instanceFactBuilder(k.sig))) {
                 null -> { /* do nothing */ }
-                is KFormula -> k.sig.fact { newFact }
+                is KaratFormula -> k.sig.addFact(newFact.translate())
                 else -> throw IllegalArgumentException("instance fact returns type ${newFact::class.simpleName}")
               }
             ext.type.klass?.isSubclassOf(Fact::class) == true ->
-              when (val newFact = it.call(companionValue, factBuilder())) {
+              when (val newFact = it.call(companionValue, object : Fact { })) {
                 null -> { /* do nothing */ }
-                is KFormula -> fact { newFact }
+                is KaratFormula -> fact(newFact)
                 else -> throw IllegalArgumentException("fact returns type ${newFact::class.simpleName}")
               }
             else -> { }
@@ -350,5 +348,8 @@ public class AlloyBuilder {
     }
   }
 
-   */
+  private fun instanceFactBuilder(sig: Sig): InstanceFact<Any?> =
+    object : InstanceFact<Any?> {
+      override val self: KaratExpr<Any?> = Argument(sig.decl.get())
+    }
 }

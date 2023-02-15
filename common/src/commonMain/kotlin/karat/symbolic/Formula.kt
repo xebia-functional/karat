@@ -84,6 +84,7 @@ public data class Minus<A>(val x: Expr<A>, val y: Expr<A>): Expr<A>
 public data class Intersect<A>(val x: Expr<A>, val y: Expr<A>): Expr<A>
 public data class Product<A, B>(val x: Expr<A>, val y: Expr<B>): Expr<Pair<A, B>>
 public data class Equals<A>(val x: Expr<A>, val y: Expr<A>): Formula
+public data class In<A>(val x: Expr<A>, val y: Expr<A>): Formula
 
 // relation operators
 

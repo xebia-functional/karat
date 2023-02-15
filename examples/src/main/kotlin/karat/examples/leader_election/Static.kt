@@ -12,7 +12,7 @@ interface SNode {
   val id: Int
 
   companion object {
-    fun Fact.ring(): KFormula = karat.ast.and {
+    fun Fact.ring(): KFormula = and {
       // SNodes form a ring
       +forAll<Node> { n -> set<SNode>() `in` n / oneOrMore(SNode::succ) }
       // all SNodes have unique id's

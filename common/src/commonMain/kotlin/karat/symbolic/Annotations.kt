@@ -10,12 +10,11 @@ import kotlin.reflect.KClass
 public annotation class reflect
 
 /**
- * There are more instances of this type
- * than those of their descendants.
- * (In Alloy this is the opposite of 'abstract').
+ * There are no instances of this type
+ * other than those of their descendants.
  */
 @Target(AnnotationTarget.CLASS)
-public annotation class open
+public annotation class abstract
 
 /**
  * This is a mere subset of another class,
