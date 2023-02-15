@@ -1,6 +1,11 @@
 # 💎 Karat
 
-> Alloy within Kotlin
+> Temporal Logic for Kotlin
+
+Karat is a DSL to specify systems using [linear temporal logic](https://en.wikipedia.org/wiki/Linear_temporal_logic).
+From a single specification you can pursue two different avenues:
+
+- Check the implementation against the model using our [integration with Kotest]
 
 Karat is a DSL for writing and executing [Alloy](https://alloytools.org/) specifications from within Kotlin. The main features are:
 

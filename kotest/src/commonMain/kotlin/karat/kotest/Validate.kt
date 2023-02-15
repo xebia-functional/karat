@@ -14,14 +14,16 @@ import kotlin.runCatching
 public typealias KotestAtomic<A> = Atomic<Result<A>, Unit>
 public typealias KotestFormula<A> = Formula<Result<A>, Unit>
 
+public fun <A> onRight(test: suspend (A) -> Unit): suspend (Result<A>) -> Unit = {
+  it.shouldBeSuccess()
+  test(it.getOrNull()!!)
+}
+
 /**
  * Basic formula which checks that an item is produced, and satisfies the [test].
  */
 public fun <A> should(test: suspend (A) -> Unit): KotestAtomic<A> =
-  Predicate {
-    it.shouldBeSuccess()
-    test(it.getOrNull()!!)
-  }
+  Predicate(onRight(test))
 
 /**
  * Basic formula which checks that an item is produced, and satisfies the [predicate].
@@ -55,7 +57,6 @@ public inline fun <reified T: Throwable> throws(crossinline test: suspend (T) ->
     test(it as T)
   }
 
-
 public data class Step<out State, out Response>(
   val state: State,
   val response: Response
@@ -66,6 +67,10 @@ public data class Info<out Action, out State, out Response>(
   val nextState: State,
   val response: Response
 )
+
+public fun <Action, State, Response> item(
+  test: suspend (Info<Action, State, Response>) -> Unit
+): suspend (Result<Info<Action, State, Response>>) -> Unit = onRight(test)
 
 public tailrec suspend fun <Action, State, Response> KotestFormula<Info<Action, State, Response>>.check(
   actions: List<Action>,

@@ -65,5 +65,5 @@ internal object SymbolicFormulaBuilder: FormulaBuilder<Nothing, Formula, Formula
 }
 
 public fun trace(
-  block: suspend TraceFormulaBuilder<Nothing, Formula>.() -> Unit
+  block: suspend TraceFormulaBuilder<Nothing, Formula, Formula, Formula>.() -> Unit
 ): Formula = karat.trace(SymbolicFormulaBuilder, block)

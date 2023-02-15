@@ -8,7 +8,7 @@ public fun <A, R, B> formula(
 ): B = karat.formula(ConcreteFormulaBuilder(), block)
 
 public fun <A, R> trace(
-  block: suspend TraceFormulaBuilder<A, suspend (A) -> R>.() -> Unit
+  block: suspend TraceFormulaBuilder<A, suspend (A) -> R, Formula<A, R>, Atomic<A, R>>.() -> Unit
 ): Formula<A, R> =
   karat.trace(ConcreteFormulaBuilder(), block)
 

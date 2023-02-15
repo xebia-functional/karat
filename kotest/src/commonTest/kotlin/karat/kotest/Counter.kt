@@ -37,21 +37,37 @@ class StateMachineSpec: StringSpec({
       )
     }
   }
+  "at least zero, version 2" {
+    checkTraceAgainst(model, -2, ::right) {
+      whenCurrent { item<Action, Int, Int> { it.action shouldBe Action.READ } }
+      checkCurrent { item<Action, Int, Int> { it.response.shouldBeGreaterThanOrEqual(0) } }
+    }
+  }
   "always increasing" {
     checkAgainst(model, 0, ::wrong) {
       always(
         implies(
           should { it.action shouldBe Action.READ },
           remember { current ->
+            val rememberedResponse = current.getOrNull()!!.response
             afterwards(
               implies(
                 should { it.action shouldBe Action.READ },
-                should { it.response.shouldBeGreaterThanOrEqual(current.getOrNull()!!.response) }
+                should { it.response.shouldBeGreaterThanOrEqual(rememberedResponse) }
               )
             )
           }
         )
       )
+    }
+  }
+  "always increasing, version 2" {
+    checkTraceAgainst(model, 0, ::wrong) {
+      whenCurrent { item<Action, Int, Int> { it.action shouldBe Action.READ } }
+      val previousResponse = remember().getOrNull()!!.response
+      oneOrMoreSteps()
+      whenCurrent { item<Action, Int, Int> { it.action shouldBe Action.READ } }
+      checkCurrent { item<Action, Int, Int> { it.response.shouldBeGreaterThanOrEqual(previousResponse) } }
     }
   }
 })

@@ -8,21 +8,22 @@ import kotlin.coroutines.suspendCoroutine
 
 public fun <Subject, Test, Formula, Atomic : Formula> trace(
   builder: FormulaBuilder<Subject, Test, Formula, Atomic>,
-  block: suspend TraceFormulaBuilder<Subject, Test>.() -> Unit
+  block: suspend TraceFormulaBuilder<Subject, Test, Formula, Atomic>.() -> Unit
 ): Formula {
   val machine = TraceFormulaBuilderImpl<Subject, Test, Formula, Atomic>(builder)
   block.startCoroutine(
     machine,
     Continuation(EmptyCoroutineContext) { machine.done() }
   )
-  return machine.execute()
+  return builder.always(machine.execute())
 }
 
 /**
  * Generic builder for sequential traces of formulae.
  * Use [trace] to turn those into regular formula
  */
-public interface TraceFormulaBuilder<Subject, Test> {
+public interface TraceFormulaBuilder<Subject, Test, Formula, Atomic : Formula>
+  : FormulaBuilder<Subject, Test, Formula, Atomic> {
   public suspend fun remember(): Subject
   public suspend fun whenCurrent(test: Test)
   public suspend fun oneStep()
@@ -32,39 +33,32 @@ public interface TraceFormulaBuilder<Subject, Test> {
     zeroOrMoreSteps()
   }
   public suspend fun checkCurrent(test: Test)
-  public suspend fun fromNowOn(
-    builder: suspend TraceFormulaBuilder<Subject, Test>.() -> Unit
-  )
 }
 
 private class TraceFormulaBuilderImpl<Subject, Test, Formula, Atomic : Formula>(
   private val builder: FormulaBuilder<Subject, Test, Formula, Atomic>,
-): TraceFormulaBuilder<Subject, Test> {
-  sealed interface State<Subject, Test> {
-    data class Remember<Subject, Test>(
+): TraceFormulaBuilder<Subject, Test, Formula, Atomic>, FormulaBuilder<Subject, Test, Formula, Atomic> by builder {
+  sealed interface State<Subject, Test, Formula, Atomic> {
+    data class Remember<Subject, Test, Formula, Atomic>(
       val continuation: Continuation<Subject>
-    ): State<Subject, Test>
-    data class WhenCurrent<Subject, Test>(
+    ): State<Subject, Test, Formula, Atomic>
+    data class WhenCurrent<Subject, Test, Formula, Atomic>(
       val test: Test,
       val continuation: Continuation<Unit>
-    ): State<Subject, Test>
-    data class OneStep<Subject, Test>(
+    ): State<Subject, Test, Formula, Atomic>
+    data class OneStep<Subject, Test, Formula, Atomic>(
       val continuation: Continuation<Unit>
-    ): State<Subject, Test>
-    data class ZeroOrMoreSteps<Subject, Test>(
+    ): State<Subject, Test, Formula, Atomic>
+    data class ZeroOrMoreSteps<Subject, Test, Formula, Atomic>(
       val continuation: Continuation<Unit>
-    ): State<Subject, Test>
-    data class CheckCurrent<Subject, Test>(
+    ): State<Subject, Test, Formula, Atomic>
+    data class CheckCurrent<Subject, Test, Formula, Atomic>(
       val test: Test,
       val continuation: Continuation<Unit>
-    ): State<Subject, Test>
-    data class FromNowOn<Subject, Test>(
-      val builder: suspend TraceFormulaBuilder<Subject, Test>.() -> Unit,
-      val continuation: Continuation<Unit>
-    ): State<Subject, Test>
+    ): State<Subject, Test, Formula, Atomic>
   }
 
-  private var current: State<Subject, Test>? = null
+  private var current: State<Subject, Test, Formula, Atomic>? = null
 
   fun done() {
     current = null
@@ -83,9 +77,6 @@ private class TraceFormulaBuilderImpl<Subject, Test, Formula, Atomic : Formula>(
   }
   override suspend fun checkCurrent(test: Test) = suspendCoroutine {
     current = State.CheckCurrent(test, it)
-  }
-  override suspend fun fromNowOn(builder: suspend TraceFormulaBuilder<Subject, Test>.() -> Unit) = suspendCoroutine {
-    current = State.FromNowOn(builder, it)
   }
 
   fun execute(): Formula = when (val c = current) {
@@ -113,9 +104,5 @@ private class TraceFormulaBuilderImpl<Subject, Test, Formula, Atomic : Formula>(
         execute()
       }
     )
-    is State.FromNowOn -> builder.always(run {
-      c.continuation.resume(Unit)
-      execute()
-    })
   }
 }
