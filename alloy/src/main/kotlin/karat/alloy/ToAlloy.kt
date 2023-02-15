@@ -105,7 +105,7 @@ public open class AlloyBuilder {
     Quantifier.NO -> { x -> x.no() }
     Quantifier.OPTIONAL -> { x -> x.lone() }
     Quantifier.SINGLE -> { x -> x.one() }
-    Quantifier.ALL -> { x -> ExprConstant.TRUE }
+    Quantifier.ALL -> { _ -> ExprConstant.TRUE }
   }
 
   public fun <A> KaratExpr<A>.translate(): AlloyExpr = when (this) {

@@ -22,6 +22,9 @@ public interface FormulaBuilder<Subject, Test, Formula, Atomic : Formula> {
     and(formula.toList())
   public fun or(vararg formula: Formula): Formula =
     or(formula.toList())
+
+  public fun afterwards(block: Formula): Formula =
+    next(always(block))
 }
 
 public fun <Subject, Test, Formula, Atomic : Formula, R> formula(

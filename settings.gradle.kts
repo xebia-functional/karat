@@ -9,6 +9,9 @@ project(":karat-common").projectDir = file("common")
 include("karat-alloy")
 project(":karat-alloy").projectDir = file("alloy")
 
+include("karat-kotest")
+project(":karat-kotest").projectDir = file("kotest")
+
 include("karat-lib")
 project(":karat-lib").projectDir = file("lib")
 

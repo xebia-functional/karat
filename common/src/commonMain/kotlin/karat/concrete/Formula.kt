@@ -4,18 +4,18 @@ import karat.FormulaBuilder
 import karat.TraceFormulaBuilder
 
 public fun <A, R, B> formula(
-  block: FormulaBuilder<A, (A) -> R, Formula<A, R>, Atomic<A, R>>.() -> B
+  block: FormulaBuilder<A, suspend (A) -> R, Formula<A, R>, Atomic<A, R>>.() -> B
 ): B = karat.formula(ConcreteFormulaBuilder(), block)
 
 public fun <A, R> trace(
-  block: suspend TraceFormulaBuilder<A, (A) -> R>.() -> Unit
+  block: suspend TraceFormulaBuilder<A, suspend (A) -> R>.() -> Unit
 ): Formula<A, R> =
   karat.trace(ConcreteFormulaBuilder(), block)
 
-public class ConcreteFormulaBuilder<A, R>: FormulaBuilder<A, (A) -> R, Formula<A, R>, Atomic<A, R>> {
+public class ConcreteFormulaBuilder<A, R>: FormulaBuilder<A, suspend (A) -> R, Formula<A, R>, Atomic<A, R>> {
   override val `true`: Atomic<A, R> = TRUE
   override val `false`: Atomic<A, R> = FALSE
-  override fun predicate(test: (A) -> R): Atomic<A, R> = Predicate(test)
+  override fun predicate(test: suspend (A) -> R): Atomic<A, R> = Predicate(test)
   override fun not(formula: Atomic<A, R>): Formula<A, R> = Not(formula)
   override fun and(formulae: List<Formula<A, R>>): Formula<A, R> = karat.concrete.and(formulae)
   override fun or(formulae: List<Formula<A, R>>): Formula<A, R> = karat.concrete.or(formulae)
@@ -84,7 +84,7 @@ public object TRUE: Atomic<Any?, Nothing>
 public object FALSE: Atomic<Any?, Nothing>
 
 public data class Predicate<in A, out R>(
-  val test: (A) -> R
+  val test: suspend (A) -> R
 ): Atomic<A, R>
 
 public data class Not<in A, out R>(
