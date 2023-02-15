@@ -1,4 +1,4 @@
-# karat-kotest
+# Karat 💜 Kotest
 
 > Black-box testing of stateful systems using properties
 
@@ -189,14 +189,3 @@ useful when testing the _concurrent_ properties of a piece of code.
 In `kotest-trace` the temporal operators refer to _logical time_; each action counts as one further step, there's no
 relation to a certain step taking more or less time. As such, the usage is different, because it talks about the
 logical behavior of the code, not about its concurrency characteristics.
-
-## References
-
-The use of temporal logic to describe program properties has a long history. Some interesting pointers are:
-
-- [Quickstrom's Specification Language](https://docs.quickstrom.io/en/0.5.0/topics/specification-language.html).
-  Quickstrom is a tool for testing how a web application behaves when some events like clicking occur. It uses
-  temporal logic to express the desired outcome.
-- [Formal Software Design with Alloy 6](https://haslab.github.io/formal-software-design/index.html). Alloy is a tool
-  for formal modeling and exploration of systems. In Alloy you use temporal logic in both describing the system and
-  specifying properties which should be verified.

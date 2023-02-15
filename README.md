@@ -5,19 +5,16 @@
 Karat is a DSL to specify systems using [linear temporal logic](https://en.wikipedia.org/wiki/Linear_temporal_logic).
 From a single specification you can pursue two different avenues:
 
-- Check the implementation against the model using our [integration with Kotest]
+- Check the implementation against the model using our [integration with Kotest](https://github.com/47degrees/karat/tree/main/kotest).
+- Verify properties of the model using our [integration with Alloy](https://github.com/47degrees/karat/tree/main/alloy).
 
-Karat is a DSL for writing and executing [Alloy](https://alloytools.org/) specifications from within Kotlin. The main features are:
+## References
 
-- 🕰️ Complete coverage of Alloy's temporal formula language,
-- 🧱 _Reflection_ of Kotlin classes and objects as Alloy signatures,
-- 🤖 _State machine_ builder which removes the need of manual handling.
+The use of temporal logic to describe program properties has a long history. Some interesting pointers are:
 
-There's not much documentation, but you can look at the [examples](https://github.com/47degrees/karat/tree/main/examples/src/main/kotlin/karat/reflect) to get an idea.
-In particular, the [`leader_election` folder](https://github.com/47degrees/karat/tree/main/examples/src/main/kotlin/karat/reflect/leader_election)
-implements the model from [this tutorial](https://haslab.github.io/formal-software-design/protocol-design/index.html).
-
-## 📖 Alloy documentation
-
-- [Formal Software Design with Alloy 6](https://haslab.github.io/formal-software-design/index.html)
-- [Alloy Docs](https://alloy.readthedocs.io/en/latest/)
+- [Quickstrom's Specification Language](https://docs.quickstrom.io/en/0.5.0/topics/specification-language.html).
+  Quickstrom is a tool for testing how a web application behaves when some events like clicking occur. It uses
+  temporal logic to express the desired outcome.
+- [Formal Software Design with Alloy 6](https://haslab.github.io/formal-software-design/index.html).
+  [Alloy](https://alloytools.org/) is a tool for formal modeling and exploration of systems. In Alloy you use temporal 
+  logic to both describe the system and specify properties which should be verified.
