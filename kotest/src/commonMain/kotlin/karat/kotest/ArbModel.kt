@@ -8,6 +8,9 @@ import karat.TraceFormulaBuilder
 import karat.concrete.ConcreteFormulaBuilder
 import karat.concrete.trace
 
+public typealias KotestFormulaBuilder<ConcreteState, Action, Response> =
+  ConcreteFormulaBuilder<Result<Info<Action, ConcreteState, Response>>, Unit>
+
 public interface ArbModel<State, Action> {
   public val initial: State
   public fun nexts(state: State): Arb<Action?>
@@ -68,11 +71,11 @@ public suspend fun <AbstractState, ConcreteState, Action, Response> checkTraceAg
   step: suspend (Action, ConcreteState) -> Step<ConcreteState, Response>,
   range: IntRange = 1 .. 100,
   formula: suspend TraceFormulaBuilder<
-          Result<Info<Action, ConcreteState, Response>>,
-          suspend (Result<Info<Action, ConcreteState, Response>>) -> Unit,
-          KotestFormula<Info<Action, ConcreteState, Response>>,
-          KotestAtomic<Info<Action, ConcreteState, Response>>
-          >.() -> Unit
+      Result<Info<Action, ConcreteState, Response>>,
+      suspend (Result<Info<Action, ConcreteState, Response>>) -> Unit,
+      KotestFormula<Info<Action, ConcreteState, Response>>,
+      KotestAtomic<Info<Action, ConcreteState, Response>>
+    >.() -> Unit
 ) {
   checkAll(model.gen(range)) { actions ->
     val translated = trace(formula)
