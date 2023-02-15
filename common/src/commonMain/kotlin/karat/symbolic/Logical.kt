@@ -1,6 +1,7 @@
 package karat.symbolic
 
 import karat.FormulaBuilder
+import karat.TraceFormulaBuilder
 import kotlin.reflect.KProperty0
 import kotlin.reflect.KProperty1
 
@@ -62,3 +63,7 @@ internal object SymbolicFormulaBuilder: FormulaBuilder<Nothing, Formula, Formula
   override fun always(formula: Formula): Formula = karat.symbolic.always(formula)
   override fun eventually(formula: Formula): Formula = karat.symbolic.eventually(formula)
 }
+
+public fun trace(
+  block: suspend TraceFormulaBuilder<Nothing, Formula>.() -> Unit
+): Formula = karat.trace(SymbolicFormulaBuilder, block)

@@ -107,7 +107,9 @@ public fun main() {
   alloy {
     stateMachine<LeaderElectionAction>()
     run(overall = 30, bitwidth = 3, scopes = listOf(exactly<Node>(3))) {
-      eventually { field(Node.Companion::Elected).isNotEmpty() }
+      eventually {
+        field(Node.Companion::Elected).isNotEmpty()
+      }
     }.visualize()
   }
 }

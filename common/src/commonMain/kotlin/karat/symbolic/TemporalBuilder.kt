@@ -1,6 +1,5 @@
 package karat.symbolic
 
-
 public class TemporalFormulaBuilder {
   private val initials = mutableListOf<Formula>()
   private val transitions = mutableListOf<Formula>()

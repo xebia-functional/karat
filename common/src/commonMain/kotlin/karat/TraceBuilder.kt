@@ -26,7 +26,11 @@ public interface TraceFormulaBuilder<Subject, Test> {
   public suspend fun remember(): Subject
   public suspend fun whenCurrent(test: Test)
   public suspend fun oneStep()
-  public suspend fun oneOrMoreSteps()
+  public suspend fun zeroOrMoreSteps()
+  public suspend fun oneOrMoreSteps() {
+    oneStep()
+    zeroOrMoreSteps()
+  }
   public suspend fun checkCurrent(test: Test)
   public suspend fun fromNowOn(
     builder: suspend TraceFormulaBuilder<Subject, Test>.() -> Unit
@@ -47,7 +51,7 @@ private class TraceFormulaBuilderImpl<Subject, Test, Formula, Atomic : Formula>(
     data class OneStep<Subject, Test>(
       val continuation: Continuation<Unit>
     ): State<Subject, Test>
-    data class OneOrMoreSteps<Subject, Test>(
+    data class ZeroOrMoreSteps<Subject, Test>(
       val continuation: Continuation<Unit>
     ): State<Subject, Test>
     data class CheckCurrent<Subject, Test>(
@@ -74,8 +78,8 @@ private class TraceFormulaBuilderImpl<Subject, Test, Formula, Atomic : Formula>(
   override suspend fun oneStep() = suspendCoroutine {
     current = State.OneStep(it)
   }
-  override suspend fun oneOrMoreSteps() = suspendCoroutine {
-    current = State.OneOrMoreSteps(it)
+  override suspend fun zeroOrMoreSteps() = suspendCoroutine {
+    current = State.ZeroOrMoreSteps(it)
   }
   override suspend fun checkCurrent(test: Test) = suspendCoroutine {
     current = State.CheckCurrent(test, it)
@@ -98,12 +102,10 @@ private class TraceFormulaBuilderImpl<Subject, Test, Formula, Atomic : Formula>(
       c.continuation.resume(Unit)
       execute()
     })
-    is State.OneOrMoreSteps -> builder.next(
-      builder.eventually(run {
-        c.continuation.resume(Unit)
-        execute()
-      })
-    )
+    is State.ZeroOrMoreSteps -> builder.eventually(run {
+      c.continuation.resume(Unit)
+      execute()
+    })
     is State.CheckCurrent -> builder.and(
       builder.predicate(c.test),
       run {
