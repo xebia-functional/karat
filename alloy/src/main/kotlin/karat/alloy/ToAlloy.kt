@@ -6,6 +6,7 @@ import edu.mit.csail.sdg.ast.Expr as AlloyExpr
 import karat.symbolic.*
 import karat.symbolic.Expr as KaratExpr
 import karat.symbolic.Formula as KaratFormula
+import karat.symbolic.TypeSet as KaratSet
 import java.lang.reflect.Method
 import java.util.concurrent.atomic.AtomicLong
 import javax.validation.constraints.NotEmpty
@@ -22,6 +23,14 @@ public open class AlloyBuilder {
 
   public fun fact(vararg formula: KaratFormula) {
     facts.addAll(formula.map { it.translate() })
+  }
+
+  public fun stateMachine(block: TemporalFormulaBuilder.() -> Unit) {
+    fact(TemporalFormulaBuilder().also(block).build())
+  }
+
+  public inline fun <reified T> stateMachine() {
+    reflectMachineFromClass(T::class.simpleName!!, typeOf<T>())
   }
 
   // rest is implementation details
@@ -55,9 +64,12 @@ public open class AlloyBuilder {
         null, null, null, null,
         listOf(ExprVar.make(Pos.UNKNOWN, nextUnique(set), set.type())), set
       )
-      quantifier.translate().make(
-        null, null, listOf(arg), formula(Argument(arg)).translate()
-      )
+      when (val inner = formula(Argument(arg))) {
+        TRUE -> quantifier.translateEmpty().invoke(set)
+        else -> quantifier.translate().make(
+          null, null, listOf(arg), inner.translate()
+        )
+      }
     }
     is Always -> formula.translate().always()
     is Eventually -> formula.translate().eventually()
@@ -88,9 +100,18 @@ public open class AlloyBuilder {
     Quantifier.EXISTS -> ExprQt.Op.SOME
   }
 
+  private fun Quantifier.translateEmpty(): (AlloyExpr) -> AlloyExpr = when (this) {
+    Quantifier.EXISTS -> { x -> x.some() }
+    Quantifier.NO -> { x -> x.no() }
+    Quantifier.OPTIONAL -> { x -> x.lone() }
+    Quantifier.SINGLE -> { x -> x.one() }
+    Quantifier.ALL -> { x -> ExprConstant.TRUE }
+  }
+
   public fun <A> KaratExpr<A>.translate(): AlloyExpr = when (this) {
+    is ImplDefinedFormula<*, A> -> requireNotNull(this.formula as? AlloyExpr)
     is Flatten<*, A> -> x.translate()
-    is TypeSet<A> -> set(type) ?: throw IllegalArgumentException("cannot find $type")
+    is KaratSet<A> -> set(type) ?: throw IllegalArgumentException("cannot find $type")
     is FieldRelation<*, *> -> field(type, property)
     is GlobalField<A> -> global(property)
     is Argument<*, *> -> (decl as Decl).get()
@@ -160,11 +181,17 @@ public open class AlloyBuilder {
     }
   }
 
-  private fun <A, F> field(type: KType, property: KProperty1<A, F>): Sig.Field =
-    reflectedSigs[type.reflected]!!.fields[property]!!
+  private fun <A, F> field(type: KType, property: KProperty1<A, F>): Sig.Field {
+    if (type.reflected !in reflectedSigs)
+      reflect(type.reflectedClosure(doNotVisit = reflectedSigs.keys))
+    return reflectedSigs[type.reflected]!!.fields[property]!!
+  }
 
-  private fun <F> global(property: KProperty0<F>): Sig =
-    reflectedGlobals[property.javaGetter]!!
+  private fun <F> global(property: KProperty0<F>): Sig {
+    if (property.javaGetter !in reflectedGlobals)
+      reflectProperty(property)
+    return reflectedGlobals[property.javaGetter]!!
+  }
 
   private fun reflect(types: Iterable<KType>) {
     types.forEach { reflectClassAsSig(it) }
@@ -278,7 +305,9 @@ public open class AlloyBuilder {
     val companionKlass = type.klass!!.companionObject
     val companionValue = type.klass!!.companionObjectInstance
     if (companionKlass != null && companionValue != null) {
-      companionKlass.declaredMemberProperties.forEach { reflectProperty(it) }
+      companionKlass.declaredMemberProperties.filter {
+        it.hasAnnotation<reflect>()
+      }.forEach { reflectProperty(it) }
     }
   }
 
@@ -352,4 +381,179 @@ public open class AlloyBuilder {
     object : InstanceFact<Any?> {
       override val self: KaratExpr<Any?> = Argument(sig.decl)
     }
+
+  @PublishedApi
+  internal fun reflectMachineFromClass(
+    transitionSigName: String,
+    oneType: KType,
+    vararg moreTypes: KType,
+    transitionVarName: String = "Transition",
+    initialName: String = "Init",
+    stutterName: String = "Stutter",
+  ): Unit = stateMachine {
+    val types = listOf(oneType) + moreTypes
+
+    types.forEach { ty ->
+      val klass = requireNotNull(ty.klass) {
+        "only bare interfaces can be turned into state machines"
+      }
+      require(klass.java.isInterface && klass.isSealed && klass.declaredMembers.isEmpty()) {
+        "only empty sealed interfaces can be turned into state machines"
+      }
+      require(klass.typeParameters.isEmpty()) {
+        "only interfaces without parameters can be turned into state machines"
+      }
+    }
+
+    // 1. find the different steps
+    val klasses = types.map { it.klass!! }
+    val initials = klasses.mapNotNull { klass ->
+      klass.sealedSubclasses.firstOrNull { it.hasAnnotation<initial>() }?.let { klass to it }
+    }.toMap()
+    val stutters = klasses.mapNotNull { klass ->
+      klass.sealedSubclasses.firstOrNull { it.hasAnnotation<stutter>() }?.let { klass to it }
+    }.toMap()
+    val stutterFors = klasses.flatMap { klass ->
+      klass.sealedSubclasses.mapNotNull { stutterKlass ->
+        stutterKlass.findAnnotation<stutterFor>()?.klass?.let { forKlass ->
+          (klass to forKlass) to stutterKlass
+        }
+      }
+    }.toMap()
+    val actualTransitions = klasses.associateWith { klass ->
+      klass.sealedSubclasses.filter {
+        !it.hasAnnotation<initial>() && !it.hasAnnotation<stutter>() && !it.hasAnnotation<stutterFor>()
+      }
+    }
+
+    // 2. declare the top of the hierarchy
+    val newSig = Sig.PrimSig(transitionSigName, Attr.ABSTRACT)
+    sigs.add(newSig)
+
+    // 3. declare a single element to hold the current transition
+    val stateSig = Sig.SubsetSig(transitionVarName, listOf(newSig), Attr.ONE, Attr.VARIABLE)
+    sigs.add(stateSig)
+
+    val currentStateRef = current<Any?>(ImplDefinedFormula(stateSig))
+    val nextStateRef = next<Any?>(ImplDefinedFormula(stateSig))
+
+    // 4. declare the initial transition
+    val initialSig = Sig.PrimSig(initialName, newSig, Attr.ONE)
+    sigs.add(initialSig)
+    initial {
+      val t = and(
+        initials.map { (_, v) ->
+          formulaFromObject("initial", v)
+        } + (currentStateRef `==` ImplDefinedFormula(initialSig)),
+      )
+      t
+    }
+
+    // 5. declare the stutter transition
+    val stutterSig = Sig.PrimSig(stutterName, newSig, Attr.ONE)
+    sigs.add(stutterSig)
+    transition {
+      val t = and(
+        stutters.map { (_, v) ->
+          formulaFromObject("stutter", v)
+        } + (nextStateRef `==` ImplDefinedFormula(stutterSig))
+      )
+      t
+    }
+
+    // 6. declare each of the others
+    actualTransitions.forEach { (klass, subclasses) ->
+      subclasses.forEach { transitionKlass ->
+        val actionSigName = when (val enclosing = transitionKlass.java.enclosingClass) {
+          null -> transitionKlass.simpleName!!
+          else -> "${enclosing.simpleName}>${transitionKlass.simpleName!!}"
+        }
+        val companion = requireNotNull(transitionKlass.companionObjectInstance as? Transition) {
+          "transition classes must have a companion object implementing Transition"
+        }
+        val companionKlass = requireNotNull(transitionKlass.companionObject)
+        val transitionArguments = companionKlass.supertypes.find {
+          it.klass!!.isSubclassOf(Transition::class)
+        }!!.arguments.map { it.type!! }
+        val transitionSig: Sig.PrimSig =
+          if (companion is Transition0)
+            Sig.PrimSig(actionSigName, newSig, Attr.ONE)
+          else
+            Sig.PrimSig(actionSigName, newSig)
+        sigs.add(transitionSig)
+        reflectedSigs[companionKlass.starProjectedType.reflected] = ReflectedSig(transitionSig)
+        val transitionProps = transitionArguments.mapIndexed { i, ty ->
+          transitionSig.addField("arg$i", set(ty))
+        }
+
+        val thisOne: KaratFormula = when (companion) {
+          is Transition0 -> companion.execute()
+          is Transition1<*> -> KaratSet<Nothing>(transitionArguments[0]).any {
+            and(
+              companion.execute(it),
+              ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[0])) `==` it
+            )
+          }
+          is Transition2<*, *> -> KaratSet<Nothing>(transitionArguments[0]).any { a ->
+            KaratSet<Nothing>(transitionArguments[1]).any { b ->
+              and(
+                companion.execute(a, b),
+                ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[0])) `==` a,
+                ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[1])) `==` b
+              )
+            }
+          }
+          is Transition3<*, *, *> -> KaratSet<Nothing>(transitionArguments[0]).any { a ->
+            KaratSet<Nothing>(transitionArguments[1]).any { b ->
+              KaratSet<Nothing>(transitionArguments[2]).any { c ->
+                and(
+                  companion.execute(a, b, c),
+                  ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[0])) `==` a,
+                  ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[1])) `==` b,
+                  ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[2])) `==` c
+                )
+              }
+            }
+          }
+          is Transition4<*, *, *, *> -> KaratSet<Nothing>(transitionArguments[0]).any { a ->
+            KaratSet<Nothing>(transitionArguments[1]).any { b ->
+              KaratSet<Nothing>(transitionArguments[2]).any { c ->
+                KaratSet<Nothing>(transitionArguments[3]).any { d ->
+                  and(
+                    companion.execute(a, b, c, d),
+                    ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[0])) `==` a,
+                    ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[1])) `==` b,
+                    ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[2])) `==` c,
+                    ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[3])) `==` d
+                  )
+                }
+              }
+            }
+          }
+        }
+
+        val stutterFormulae = klasses.filter { it != klass }.mapNotNull { other ->
+          when {
+            (other to klass) in stutterFors ->
+              formulaFromObject("stutter", stutterFors[other to klass]!!)
+            other in stutters ->
+              formulaFromObject("stutter", stutters[other]!!)
+            else ->
+              null
+          }
+        }
+
+        transition {
+          val t = and(
+            stutterFormulae + thisOne + (nextStateRef `in` KaratSet(companionKlass.starProjectedType))
+          )
+          t
+        }
+      }
+    }
+  }
+
+  private fun formulaFromObject(element: String, klass: KClass<*>): KaratFormula =
+    requireNotNull(klass.companionObjectInstance as? Transition0) { "$element must be declared as object" }.execute()
+
 }

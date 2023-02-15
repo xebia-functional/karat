@@ -8,6 +8,12 @@ public sealed interface Formula
 public sealed interface Expr<out A>
 public typealias Relation<A, B> = Expr<Pair<A, B>>
 
+// for implementations
+
+public data class ImplDefinedFormula<F, A>(
+  val formula: F
+): Expr<A>
+
 // basic forms of sets and relations
 
 public data class TypeSet<out A>(

@@ -11,6 +11,19 @@ import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 import karat.symbolic.Formula as KaratFormula
 
+/**
+ * Entry-point to Alloy capabilities within Kotlin.
+ */
+@OptIn(ExperimentalTypeInference::class)
+public fun <A> alloy(
+  options: A4Options.() -> Unit = { solver = A4Options.SatSolver.SAT4J },
+  reporter: A4Reporter = ConsoleReporter,
+  @BuilderInference block: AlloyExecutionBuilder.() -> A
+): A = AlloyExecutionBuilder(A4Options().also(options), reporter).run(block)
+
+/**
+ * Defines the amount of values to generate for each class.
+ */
 public data class SigScope(val type: KType, val exactly: Boolean, val scope: IntRange)
 public inline fun <reified T> exactly(amount: Int): SigScope =
   SigScope(typeOf<T>(), true, amount .. amount)
@@ -19,13 +32,6 @@ public inline fun <reified T> around(amount: Int): SigScope =
 public inline fun <reified T> range(range: IntRange): SigScope =
   SigScope(typeOf<T>(), false, range)
 
-@OptIn(ExperimentalTypeInference::class)
-public fun <A> execute(
-  options: A4Options.() -> Unit = { solver = A4Options.SatSolver.SAT4J },
-  reporter: A4Reporter = ConsoleReporter,
-  @BuilderInference block: AlloyExecutionBuilder.() -> A
-): A = AlloyExecutionBuilder(A4Options().also(options), reporter).run(block)
-
 public class AlloyExecutionBuilder(
   private val options: A4Options,
   private val reporter: A4Reporter = ConsoleReporter
@@ -33,23 +39,43 @@ public class AlloyExecutionBuilder(
 
   public fun run(overall: Int? = null, bitwidth: Int? = null, maxseq: Int? = null, steps: IntRange? = null, scopes: List<SigScope> = emptyList(), formula: () -> KaratFormula): A4Solution =
     run(overall, bitwidth, maxseq, steps, scopes, formula())
-  public fun run(overall: Int? = null, bitwidth: Int? = null, maxseq: Int? = null, steps: IntRange? = null, scopes: List<SigScope> = emptyList(), formula: KaratFormula): A4Solution =
-    TranslateAlloyToKodkod.execute_command(
+  public fun run(overall: Int? = null, bitwidth: Int? = null, maxseq: Int? = null, steps: IntRange? = null, scopes: List<SigScope> = emptyList(), formula: KaratFormula): A4Solution {
+    val f = formula.translate()
+    return TranslateAlloyToKodkod.execute_command(
       reporter,
       sigs,
-      buildCommand(false, overall, bitwidth, maxseq, steps, scopes, ExprList.make(Pos.UNKNOWN, Pos.UNKNOWN, ExprList.Op.AND, facts + formula.translate())),
+      buildCommand(
+        false,
+        overall,
+        bitwidth,
+        maxseq,
+        steps,
+        scopes,
+        ExprList.make(Pos.UNKNOWN, Pos.UNKNOWN, ExprList.Op.AND, facts + f)
+      ),
       options
     )
+  }
 
   public fun check(overall: Int? = null, bitwidth: Int? = null, maxseq: Int? = null, steps: IntRange? = null, scopes: List<SigScope> = emptyList(), formula: () -> KaratFormula): A4Solution =
     check(overall, bitwidth, maxseq, steps, scopes, formula())
-  public fun check(overall: Int? = null, bitwidth: Int? = null, maxseq: Int? = null, steps: IntRange? = null, scopes: List<SigScope> = emptyList(), formula: KaratFormula): A4Solution =
-    TranslateAlloyToKodkod.execute_command(
+  public fun check(overall: Int? = null, bitwidth: Int? = null, maxseq: Int? = null, steps: IntRange? = null, scopes: List<SigScope> = emptyList(), formula: KaratFormula): A4Solution {
+    val f = formula.translate()
+    return TranslateAlloyToKodkod.execute_command(
       reporter,
       sigs,
-      buildCommand(true, overall, bitwidth, maxseq, steps, scopes, ExprList.make(Pos.UNKNOWN, Pos.UNKNOWN, ExprList.Op.AND, facts + formula.translate().not())),
+      buildCommand(
+        true,
+        overall,
+        bitwidth,
+        maxseq,
+        steps,
+        scopes,
+        ExprList.make(Pos.UNKNOWN, Pos.UNKNOWN, ExprList.Op.AND, facts + f.not())
+      ),
       options
     )
+  }
 
   private fun buildCommand(
     check: Boolean,
