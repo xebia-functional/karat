@@ -23,3 +23,9 @@ public infix fun Expr<Int>.gt(other: Int): Formula = NumberComparison(NumberRela
 public infix fun Expr<Int>.gte(other: Int): Formula = NumberComparison(NumberRelation.GTE, this, other.expr())
 public infix fun Expr<Int>.lt(other: Int): Formula = NumberComparison(NumberRelation.LT, this, other.expr())
 public infix fun Expr<Int>.lte(other: Int): Formula = NumberComparison(NumberRelation.LTE, this, other.expr())
+
+public operator fun Expr<Int>.plus(other: Expr<Int>): Expr<Int> = NumberArithmetic(NumberOperation.PLUS, this, other)
+public operator fun Expr<Int>.minus(other: Expr<Int>): Expr<Int> = NumberArithmetic(NumberOperation.MINUS, this, other)
+
+public operator fun Expr<Int>.plus(other: Int): Expr<Int> = NumberArithmetic(NumberOperation.PLUS, this, other.expr())
+public operator fun Expr<Int>.minus(other: Int): Expr<Int> = NumberArithmetic(NumberOperation.MINUS, this, other.expr())

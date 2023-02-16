@@ -145,6 +145,10 @@ public open class AlloyBuilder {
     is ListRest<*> -> cache["util/sequniv"]!!["rest"]!!.call(x.translate())
     is ListElements<*> -> cache["util/sequniv"]!!["elemts"]!!.call(x.translate())
     is NumberLiteral -> ExprConstant.Op.NUMBER.make(Pos.UNKNOWN, n)
+    is NumberArithmetic -> when (op) {
+      NumberOperation.PLUS -> x.translate().iplus(y.translate())
+      NumberOperation.MINUS -> x.translate().iminus(y.translate())
+    }
   }
 
   // things that deal with signatures and reflection
@@ -218,7 +222,7 @@ public open class AlloyBuilder {
     // b. find the attributes
     val attribs = listOfNotNull(
       (Attr.ABSTRACT)?.takeIf { klass.hasAnnotation<abstract>() },
-      (Attr.ONE)?.takeIf { klass.objectInstance != null },
+      (Attr.ONE)?.takeIf { klass.objectInstance != null || klass.hasAnnotation<one>() },
       (Attr.VARIABLE)?.takeIf { klass.hasAnnotation<variable>() }
     )
     val isSubset = klass.hasAnnotation<subset>()

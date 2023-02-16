@@ -7,12 +7,16 @@ plugins {
 }
 
 dependencies {
+  implementation(projects.karatCommon)
+  implementation(projects.karatKotest)
+  implementation(projects.karatAlloy)
   implementation(files("../vendor/org.alloytools.alloy.dist.jar"))
-  implementation(projects.karatLib)
+  implementation(kotlin("reflect"))
 }
 
 kotlin {
   jvmToolchain(8)
+  explicitApi()
 }
 
 tasks.withType<KotlinCompile> {

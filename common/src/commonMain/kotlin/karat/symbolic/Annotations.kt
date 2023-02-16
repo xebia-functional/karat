@@ -17,6 +17,12 @@ public annotation class reflect
 public annotation class abstract
 
 /**
+ * There's only one instance of this class.
+ */
+@Target(AnnotationTarget.CLASS)
+public annotation class one
+
+/**
  * This is a mere subset of another class,
  * it doesn't participate in closedness.
  */

@@ -1,4 +1,4 @@
-package karat.alloy.example
+package karat.examples.leader_election
 
 import karat.alloy.alloy
 import karat.alloy.exactly
@@ -59,7 +59,7 @@ public class Initiate: LeaderElectionAction {
       neverBefore(x.id `in` x.outbox),
 
       next(x.outbox) `==` current(x.outbox) + x.id,
-      (set<Node>() - x).all { stays(it.outbox) },
+      set<Node>().without(x).all { stays(it.outbox) },
 
       stays(Node::inbox),
       stays(Node.Companion::Elected)
@@ -73,10 +73,10 @@ public class Send: LeaderElectionAction {
       y `in` current(x.outbox),
 
       next(x.outbox) `==` current(x.outbox) - y,
-      (set<Node>() - x).all { stays(it.outbox) },
+      set<Node>().without(x).all { stays(it.outbox) },
 
       next(x.succ.inbox) `==` current(x.succ.inbox) + y,
-      (set<Node>() - x.succ).all { stays(it.inbox) },
+      set<Node>().without(x.succ).all { stays(it.inbox) },
 
       stays(Node.Companion::Elected)
     )
@@ -89,15 +89,15 @@ public class Read: LeaderElectionAction {
       y `in` current(x.inbox),
 
       next(x.inbox) `==` current(x.inbox) - y,
-      (set<Node>() - x).all { stays(it.inbox) },
+      set<Node>().without(x).all { stays(it.inbox) },
 
       (y gt x.id)
         .implies(next(x.outbox) `==` current(x.outbox) + y)
         .orElse(stays(x.outbox)),
-      (set<Node>() - x).all { stays(it.outbox) },
+      set<Node>().without(x).all { stays(it.outbox) },
 
       (y `==` x.id)
-        .implies(next(Node.Companion::Elected) `==` current(Node.Companion::Elected) + x)
+        .implies(next(Node.Companion::Elected) `==` current(Node.Companion::Elected).union(x))
         .orElse(stays(Node.Companion::Elected))
     )
   }

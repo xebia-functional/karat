@@ -135,3 +135,5 @@ public data class ListElements<A>(val x: Expr<List<A>>): Expr<A>
 public data class NumberLiteral(val n: Int): Expr<Int>
 public enum class NumberRelation { GT, GTE, LT, LTE }
 public data class NumberComparison(val r: NumberRelation, val x: Expr<Int>, val y: Expr<Int>): Formula
+public enum class NumberOperation { PLUS, MINUS }
+public data class NumberArithmetic(val op: NumberOperation, val x: Expr<Int>, val y: Expr<Int>): Expr<Int>

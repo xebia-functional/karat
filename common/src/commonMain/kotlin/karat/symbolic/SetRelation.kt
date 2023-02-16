@@ -34,15 +34,10 @@ public inline infix fun <A, reified B, C> Relation<A, B>.join(next: KProperty1<B
 public fun <A> Expr<A>.count(): Expr<Int> = Cardinality(this)
 
 public infix fun <A> Expr<A>.union(x: Expr<A>): Expr<A> = Union(this, x)
-public operator fun <A> Expr<A>.plus(x: Expr<A>): Expr<A> = Union(this, x)
-
-public fun <A> Expr<A>.with(x: Expr<A>): Expr<A> = Override(this, x)
-
+public infix fun <A> Expr<A>.with(x: Expr<A>): Expr<A> = Override(this, x)
 public infix fun <A> Expr<A>.diff(x: Expr<A>): Expr<A> = Minus(this, x)
-public operator fun <A> Expr<A>.minus(x: Expr<A>): Expr<A> = Minus(this, x)
-
+public infix fun <A> Expr<A>.without(x: Expr<A>): Expr<A> = Minus(this, x)
 public infix fun <A> Expr<A>.intersect(x: Expr<A>): Expr<A> = Intersect(this, x)
-
 public infix fun <A, B> Expr<A>.to(x: Expr<B>): Expr<Pair<A, B>> = Product(this, x)
 public operator fun <A, B> Expr<A>.times(x: Expr<B>): Expr<Pair<A, B>> = Product(this, x)
 
