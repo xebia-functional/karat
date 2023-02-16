@@ -87,11 +87,11 @@ public class AlloyExecutionBuilder(
     formula: AlloyExpr
   ): Command =
     Command(
-      null, null, null,
+      Pos.UNKNOWN, null, null,
       check, overall ?: -1, bitwidth ?: -1, maxseq ?: -1,
       steps?.first ?: -1, steps?.last ?: -1, -1,
-      scopes.map { CommandScope(null, set(it.type)!!, it.exactly, it.scope.first, it.scope.last, 1) },
-      emptyList(), formula, null)
+      scopes.map { CommandScope(Pos.UNKNOWN, Pos.UNKNOWN, set(it.type)!!, it.exactly, it.scope.first, it.scope.last, 1) },
+      emptyList(), null, formula, null)
 }
 
 public object ConsoleReporter: A4Reporter() {

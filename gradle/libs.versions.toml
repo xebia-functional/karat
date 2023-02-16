@@ -5,6 +5,7 @@ coroutines = "1.6.4"
 kotest = "5.5.4"
 serialization = "1.5.0-RC"
 ktor = "2.2.3"
+alloy = "6.1.0-SNAPSHOT"
 
 [libraries]
 javax-validation = { module = "javax.validation:validation-api", version.ref = "javaxValidation" }
@@ -20,6 +21,7 @@ ktor-server-resources = { module = "io.ktor:ktor-server-resources", version.ref 
 ktor-server-contentNegotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 ktor-client-resources = { module = "io.ktor:ktor-client-resources", version.ref = "ktor" }
 ktor-client-contentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+alloy = { module = "org.alloytools:org.alloytools.alloy.dist", version.ref = "alloy" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

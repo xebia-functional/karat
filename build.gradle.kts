@@ -8,7 +8,8 @@ plugins {
 
 allprojects {
   repositories {
-     mavenCentral()
+    mavenCentral()
+    maven(url = "https://oss.sonatype.org/content/repositories/snapshots/")
   }
 
   group = "com.47deg.karat"

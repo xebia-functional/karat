@@ -10,7 +10,6 @@ dependencies {
   implementation(projects.karatCommon)
   implementation(projects.karatKotest)
   implementation(projects.karatAlloy)
-  implementation(files("../vendor/org.alloytools.alloy.dist.jar"))
   implementation(kotlin("reflect"))
 }
 

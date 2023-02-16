@@ -73,8 +73,9 @@ public open class AlloyBuilder {
     }
     is Always -> formula.translate().always()
     is Eventually -> formula.translate().eventually()
-    is Historically -> formula.translate().historically()
-    is After -> formula.translate().after()
+    // historically and after were removed in 6.1.0
+    is Historically -> ExprUnary.Op.HISTORICALLY.make(Pos.UNKNOWN, formula.translate())
+    is After -> ExprUnary.Op.AFTER.make(Pos.UNKNOWN, formula.translate())
     is Before -> formula.translate().before()
     is Once -> formula.translate().once()
     is Until -> condition.translate().until(then.translate())
@@ -235,9 +236,9 @@ public open class AlloyBuilder {
     // d. generate the thing
     // at this point we don't care about the generic argument, so we use Any?
     val newSig: Sig = when {
-      isSubset -> Sig.SubsetSig(name, listOf(superSig), *attribs.toTypedArray())
+      isSubset -> Sig.SubsetSig(Pos.UNKNOWN, name, listOf(Pos.UNKNOWN), listOf(superSig), *attribs.toTypedArray())
       superSig == null -> Sig.PrimSig(name, *attribs.toTypedArray())
-      superSig is Sig.PrimSig -> Sig.PrimSig(name, superSig, *attribs.toTypedArray())
+      superSig is Sig.PrimSig -> Sig.PrimSig(Pos.UNKNOWN, name, Pos.UNKNOWN, superSig, *attribs.toTypedArray())
       else -> throw IllegalArgumentException("non-subset signatures must extend a non-subset one")
     }
     // e. record it
@@ -293,8 +294,8 @@ public open class AlloyBuilder {
             val newProp =
               if (property is KMutableProperty<*> || property.hasAnnotation<variable>())
                 k.sig.addTrickyField(
-                  null, null, null, null, null,
-                  Pos.UNKNOWN, arrayOf(property.name), sigTy
+                  Pos.UNKNOWN, null, null, null, null,
+                  Pos.UNKNOWN, listOf(ExprVar.make(null, property.name)), sigTy
                 ).first()
               else
                 k.sig.addField(property.name, sigTy)
@@ -339,11 +340,12 @@ public open class AlloyBuilder {
       null ->
         throw IllegalArgumentException("cannot reflect type $ret")
       else -> {
+        val parentSigs = listOfNotNull(sigTy.second as? Sig)
         val newProp: Sig.SubsetSig =
           if (property is KMutableProperty<*> || property.hasAnnotation<variable>())
-            Sig.SubsetSig(property.name, listOfNotNull(sigTy.second as? Sig), *(listOf(Attr.VARIABLE) + sigTy.first).toTypedArray())
+            Sig.SubsetSig(Pos.UNKNOWN, property.name, parentSigs.map { Pos.UNKNOWN }, parentSigs, *(listOf(Attr.VARIABLE) + sigTy.first).toTypedArray())
           else
-            Sig.SubsetSig(property.name, listOfNotNull(sigTy.second as? Sig), *sigTy.first.toTypedArray())
+            Sig.SubsetSig(Pos.UNKNOWN, property.name, parentSigs.map { Pos.UNKNOWN }, parentSigs, *sigTy.first.toTypedArray())
 
         reflectedGlobals[property.javaGetter!!] = newProp
         sigs.add(newProp)
@@ -435,14 +437,14 @@ public open class AlloyBuilder {
     sigs.add(newSig)
 
     // 3. declare a single element to hold the current transition
-    val stateSig = Sig.SubsetSig(transitionVarName, listOf(newSig), Attr.ONE, Attr.VARIABLE)
+    val stateSig = Sig.SubsetSig(Pos.UNKNOWN, transitionVarName, listOf(Pos.UNKNOWN), listOf(newSig), Attr.ONE, Attr.VARIABLE)
     sigs.add(stateSig)
 
     val currentStateRef = current<Any?>(ImplDefinedFormula(stateSig))
     val nextStateRef = next<Any?>(ImplDefinedFormula(stateSig))
 
     // 4. declare the initial transition
-    val initialSig = Sig.PrimSig(initialName, newSig, Attr.ONE)
+    val initialSig = Sig.PrimSig(Pos.UNKNOWN, initialName, Pos.UNKNOWN, newSig, Attr.ONE)
     sigs.add(initialSig)
     initial {
       val t = and(
@@ -454,7 +456,7 @@ public open class AlloyBuilder {
     }
 
     // 5. declare the stutter transition
-    val stutterSig = Sig.PrimSig(stutterName, newSig, Attr.ONE)
+    val stutterSig = Sig.PrimSig(Pos.UNKNOWN, stutterName, Pos.UNKNOWN, newSig, Attr.ONE)
     sigs.add(stutterSig)
     transition {
       val t = and(
@@ -481,9 +483,9 @@ public open class AlloyBuilder {
         }!!.arguments.map { it.type!! }
         val transitionSig: Sig.PrimSig =
           if (companion is Transition0)
-            Sig.PrimSig(actionSigName, newSig, Attr.ONE)
+            Sig.PrimSig(Pos.UNKNOWN, actionSigName, Pos.UNKNOWN, newSig, Attr.ONE)
           else
-            Sig.PrimSig(actionSigName, newSig)
+            Sig.PrimSig(Pos.UNKNOWN, actionSigName, Pos.UNKNOWN, newSig)
         sigs.add(transitionSig)
         reflectedSigs[companionKlass.starProjectedType.reflected] = ReflectedSig(transitionSig)
         val transitionProps = transitionArguments.mapIndexed { i, ty ->

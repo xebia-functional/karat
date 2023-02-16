@@ -15,7 +15,7 @@ kotlin {
   sourceSets {
     val commonMain by getting {
       dependencies {
-        implementation(projects.karatCommon)
+        api(projects.karatCommon)
         implementation(libs.kotest.frameworkEngine)
         implementation(libs.kotest.assertionsCore)
         implementation(libs.kotest.property)
