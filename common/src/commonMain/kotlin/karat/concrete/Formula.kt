@@ -85,7 +85,13 @@ public object FALSE: Atomic<Any?, Nothing>
 
 public data class Predicate<in A, out R>(
   val test: suspend (A) -> R
-): Atomic<A, R>
+): Atomic<A, R> {
+  public companion object {
+    @JvmStatic
+    public fun <A, R> notSuspended(f: (A) -> R): Predicate<A, R> =
+      Predicate { f(it) }
+  }
+}
 
 public data class Not<in A, out R>(
   val formula: Atomic<A, R>

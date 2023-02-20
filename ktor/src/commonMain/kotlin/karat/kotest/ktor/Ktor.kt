@@ -2,11 +2,6 @@
 
 package karat.kotest.ktor
 
-import karat.kotest.KotestFormula
-import karat.kotest.ArbModel
-import karat.kotest.checkAgainst
-import karat.kotest.Info
-import karat.kotest.Step
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.resources.resources
 import io.ktor.client.request.*
@@ -14,6 +9,11 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.request.request as requestBuilder
 import io.ktor.http.HttpMethod
 import io.ktor.resources.*
+import karat.concrete.progression.Info
+import karat.concrete.progression.Step
+import karat.kotest.KotestFormula
+import karat.kotest.ArbModel
+import karat.kotest.checkAgainst
 import karat.kotest.KotestFormulaBuilder
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer

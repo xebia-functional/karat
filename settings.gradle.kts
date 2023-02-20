@@ -15,5 +15,8 @@ project(":karat-kotest").projectDir = file("kotest")
 include("karat-kotest-ktor")
 project(":karat-kotest-ktor").projectDir = file("ktor")
 
+include("karat-scalacheck")
+project(":karat-scalacheck").projectDir = file("scalacheck")
+
 include("karat-examples")
 project(":karat-examples").projectDir = file("examples")

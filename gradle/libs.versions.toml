@@ -6,6 +6,7 @@ kotest = "5.5.4"
 serialization = "1.5.0-RC"
 ktor = "2.2.3"
 alloy = "6.1.0-SNAPSHOT"
+scalacheck = "1.17.0"
 
 [libraries]
 javax-validation = { module = "javax.validation:validation-api", version.ref = "javaxValidation" }
@@ -22,8 +23,10 @@ ktor-server-contentNegotiation = { module = "io.ktor:ktor-server-content-negotia
 ktor-client-resources = { module = "io.ktor:ktor-client-resources", version.ref = "ktor" }
 ktor-client-contentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 alloy = { module = "org.alloytools:org.alloytools.alloy.dist", version.ref = "alloy" }
+scalacheck = { module = "org.scalacheck:scalacheck_3", version.ref = "scalacheck" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotest-multiplatform = { id = "io.kotest.multiplatform", version.ref = "kotest" }

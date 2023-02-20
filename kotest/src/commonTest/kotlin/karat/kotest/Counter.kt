@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.enum
+import karat.concrete.progression.Step
 
 enum class Action {
   INCREMENT, READ

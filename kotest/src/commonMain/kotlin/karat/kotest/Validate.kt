@@ -7,12 +7,32 @@ import io.kotest.matchers.result.shouldBeSuccess
 import io.kotest.matchers.should
 import io.kotest.matchers.types.beInstanceOf
 import karat.concrete.*
-import karat.kotest.internal.*
+import karat.concrete.progression.*
 import kotlin.reflect.KClass
-import kotlin.runCatching
 
 public typealias KotestAtomic<A> = Atomic<Result<A>, Unit>
 public typealias KotestFormula<A> = Formula<Result<A>, Unit>
+
+public class KotestStepResultManager<A>: StepResultManager<Result<A>, Unit, List<AssertionError>?> {
+  override val List<AssertionError>?.isOk: Boolean
+    get() = this == null
+  override val everythingOk: List<AssertionError>? = null
+  override val falseFormula: List<AssertionError> = listOf(FalseError)
+  override val unknown: List<AssertionError> = listOf(DoneUnknown)
+  override fun negationWasTrue(formula: Formula<Result<A>, Unit>): List<AssertionError> = listOf(NegationWasTrue(formula))
+  override fun shouldHoldEventually(formula: Formula<Result<A>, Unit>): List<AssertionError> = listOf(ShouldHoldEventually(formula))
+  override fun andResults(results: List<List<AssertionError>?>): List<AssertionError>? =
+    if (results.all { it.isOk }) everythingOk else results.flatMap { it.orEmpty() }
+  override fun orResults(results: List<List<AssertionError>?>): List<AssertionError>? =
+    if (results.any { it.isOk }) everythingOk else results.flatMap { it.orEmpty() }
+  override suspend fun predicate(test: suspend (Result<A>) -> Unit, value: Result<A>): List<AssertionError>? =
+    try {
+      test(value)
+      null
+    } catch (e: AssertionError) {
+      listOf(e)
+    }
+}
 
 public fun <A> onRight(test: suspend (A) -> Unit): suspend (Result<A>) -> Unit = {
   it.shouldBeSuccess()
@@ -57,45 +77,6 @@ public inline fun <reified T: Throwable> throws(crossinline test: suspend (T) ->
     test(it as T)
   }
 
-public data class Step<out State, out Response>(
-  val state: State,
-  val response: Response
-)
-public data class Info<out Action, out State, out Response>(
-  val action: Action,
-  val previousState: State,
-  val nextState: State,
-  val response: Response
-)
-
 public fun <Action, State, Response> item(
   test: suspend (Info<Action, State, Response>) -> Unit
 ): suspend (Result<Info<Action, State, Response>>) -> Unit = onRight(test)
-
-public tailrec suspend fun <Action, State, Response> KotestFormula<Info<Action, State, Response>>.check(
-  actions: List<Action>,
-  current: State,
-  step: suspend (Action, State) -> Step<State, Response>,
-  previousActions: MutableList<Action> = mutableListOf()
-): Unit = when {
-  actions.isEmpty() ->
-    this.leftToProve().throwIfFailed(previousActions, current)
-  else -> {
-    val action = actions.first()
-    val oneStepFurther = runCatching { step(action, current) }.map { Info(action, current, it.state, it.response) }
-    val progress = this.check(oneStepFurther)
-    previousActions.add(action)
-    progress.result.throwIfFailed(previousActions, oneStepFurther)
-    when (val next = oneStepFurther.getOrNull()) {
-      null -> progress.next.leftToProve().throwIfFailed(previousActions, progress.next)
-      else -> progress.next.check(actions.drop(1), next.nextState, step, previousActions)
-    }
-  }
-}
-
-private fun <A, T> FormulaStepResult.throwIfFailed(actions: List<A>, state: T) {
-  when (this) {
-    null -> { } // ok
-    else -> throw TraceAssertionError(actions, state, this)
-  }
-}

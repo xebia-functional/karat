@@ -7,6 +7,9 @@ import io.kotest.property.checkAll
 import karat.TraceFormulaBuilder
 import karat.concrete.ConcreteFormulaBuilder
 import karat.concrete.trace
+import karat.concrete.progression.Info
+import karat.concrete.progression.Step
+import karat.concrete.progression.check
 
 public typealias KotestFormulaBuilder<ConcreteState, Action, Response> =
   ConcreteFormulaBuilder<Result<Info<Action, ConcreteState, Response>>, Unit>
@@ -56,14 +59,24 @@ public suspend fun <AbstractState, ConcreteState, Action, Response> checkAgainst
   initial: ConcreteState,
   step: suspend (Action, ConcreteState) -> Step<ConcreteState, Response>,
   range: IntRange = 1 .. 100,
-  formula: ConcreteFormulaBuilder<Result<Info<Action, ConcreteState, Response>>, Unit>.() -> KotestFormula<Info<Action, ConcreteState, Response>>
+  formula: KotestFormula<Info<Action, ConcreteState, Response>>
 ) {
   checkAll(model.gen(range)) { actions ->
-    ConcreteFormulaBuilder<Result<Info<Action, ConcreteState, Response>>, Unit>()
-      .run(formula)
-      .check(actions, initial, step)
+    val problem = KotestStepResultManager<Info<Action, ConcreteState, Response>>().check(formula, actions, initial, step)
+    if (problem != null) throw TraceAssertionError(problem.actions, problem.state, problem.error!!)
   }
 }
+
+public suspend fun <AbstractState, ConcreteState, Action, Response> checkAgainst(
+  model: ArbModel<AbstractState, Action>,
+  initial: ConcreteState,
+  step: suspend (Action, ConcreteState) -> Step<ConcreteState, Response>,
+  range: IntRange = 1 .. 100,
+  formula: ConcreteFormulaBuilder<Result<Info<Action, ConcreteState, Response>>, Unit>.() -> KotestFormula<Info<Action, ConcreteState, Response>>
+): Unit =
+  ConcreteFormulaBuilder<Result<Info<Action, ConcreteState, Response>>, Unit>()
+    .run(formula)
+    .let { checkAgainst(model, initial, step, range, it) }
 
 public suspend fun <AbstractState, ConcreteState, Action, Response> checkTraceAgainst(
   model: ArbModel<AbstractState, Action>,
@@ -79,6 +92,7 @@ public suspend fun <AbstractState, ConcreteState, Action, Response> checkTraceAg
 ) {
   checkAll(model.gen(range)) { actions ->
     val translated = trace(formula)
-    translated.check(actions, initial, step)
+    val problem = KotestStepResultManager<Info<Action, ConcreteState, Response>>().check(translated, actions, initial, step)
+    if (problem != null) throw TraceAssertionError(problem.actions, problem.state, problem.error!!)
   }
 }
