@@ -13,7 +13,7 @@ import kotlin.reflect.KClass
 public typealias KotestAtomic<A> = Atomic<Result<A>, Unit>
 public typealias KotestFormula<A> = Formula<Result<A>, Unit>
 
-public class KotestStepResultManager<A>: StepResultManager<Result<A>, Unit, List<AssertionError>?> {
+public class KotestStepResultManager<A>: SuspendStepResultManager<Result<A>, Unit, List<AssertionError>?> {
   override val List<AssertionError>?.isOk: Boolean
     get() = this == null
   override val everythingOk: List<AssertionError>? = null
@@ -25,7 +25,7 @@ public class KotestStepResultManager<A>: StepResultManager<Result<A>, Unit, List
     if (results.all { it.isOk }) everythingOk else results.flatMap { it.orEmpty() }
   override fun orResults(results: List<List<AssertionError>?>): List<AssertionError>? =
     if (results.any { it.isOk }) everythingOk else results.flatMap { it.orEmpty() }
-  override suspend fun predicate(test: suspend (Result<A>) -> Unit, value: Result<A>): List<AssertionError>? =
+  override suspend fun suspendPredicate(test: suspend (Result<A>) -> Unit, value: Result<A>): List<AssertionError>? =
     try {
       test(value)
       null

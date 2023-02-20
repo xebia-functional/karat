@@ -16,7 +16,12 @@ public interface StepResultManager<A, R, E> {
   public val E.isOk: Boolean
   public fun andResults(results: List<E>): E
   public fun orResults(results: List<E>): E
-  public suspend fun predicate(test: suspend (A) -> R, value: A): E
+  public suspend fun predicate(test: (A) -> R, value: A): E
+}
+
+public interface SuspendStepResultManager<A, R, E>: StepResultManager<A, R, E> {
+  public suspend fun suspendPredicate(test: suspend (A) -> R, value: A): E
+  override suspend fun predicate(test: (A) -> R, value: A): E = suspendPredicate({ test(it) }, value)
 }
 
 public data class FormulaStep<A, R, E>(val result: E, val next: Formula<A, R>)
@@ -24,7 +29,11 @@ public data class FormulaStep<A, R, E>(val result: E, val next: Formula<A, R>)
 public suspend fun <A, R, E> StepResultManager<A, R, E>.checkAtomic(formula: Atomic<A, R>, x: A): E = when (formula) {
   is TRUE -> everythingOk
   is FALSE -> falseFormula
-  is Predicate -> predicate(formula.test, x)
+  is NonSuspendedPredicate -> predicate(formula.nonSuspendedTest, x)
+  is Predicate -> when (this) {
+    is SuspendStepResultManager -> suspendPredicate(formula.test, x)
+    else -> throw IllegalStateException("this runner does not support suspended functions")
+  }
 }
 
 public suspend fun <A, R, E> StepResultManager<A, R, E>.check(formula: Formula<A, R>, x: A): FormulaStep<A, R, E> = when (formula) {

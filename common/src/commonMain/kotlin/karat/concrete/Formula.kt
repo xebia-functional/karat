@@ -76,6 +76,7 @@ public sealed interface Atomic<in A, out R>: Formula<A, R> {
   ): Atomic<B, S> = when (this) {
     TRUE -> TRUE
     FALSE -> FALSE
+    is NonSuspendedPredicate -> NonSuspendedPredicate { x -> outMap(nonSuspendedTest(inMap(x))) }
     is Predicate -> Predicate { x -> outMap(test(inMap(x))) }
   }
 }
@@ -83,15 +84,13 @@ public sealed interface Atomic<in A, out R>: Formula<A, R> {
 public object TRUE: Atomic<Any?, Nothing>
 public object FALSE: Atomic<Any?, Nothing>
 
-public data class Predicate<in A, out R>(
-  val test: suspend (A) -> R
-): Atomic<A, R> {
-  public companion object {
-    @JvmStatic
-    public fun <A, R> notSuspended(f: (A) -> R): Predicate<A, R> =
-      Predicate { f(it) }
-  }
-}
+public open class Predicate<in A, out R>(
+  public val test: suspend (A) -> R
+): Atomic<A, R>
+
+public class NonSuspendedPredicate<in A, out R>(
+  public val nonSuspendedTest: (A) -> R
+): Predicate<A, R>({ nonSuspendedTest(it) })
 
 public data class Not<in A, out R>(
   val formula: Atomic<A, R>
