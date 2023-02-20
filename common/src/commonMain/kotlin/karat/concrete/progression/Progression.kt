@@ -1,11 +1,16 @@
 package karat.concrete.progression
 
 import karat.concrete.*
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
 
 // Based on the Quickstrom paper
 // https://arxiv.org/pdf/2203.11532.pdf,
 // which is in turned based on formula progression
 // https://users.cecs.anu.edu.au/~thiebaux/papers/icaps05.pdf
+
+public fun <A> resumeContinuation(k: Continuation<A>, value: A): Unit =
+  k.resume(value)
 
 public interface StepResultManager<A, R, E> {
   public val everythingOk: E
