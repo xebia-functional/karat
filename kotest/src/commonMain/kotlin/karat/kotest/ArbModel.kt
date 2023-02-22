@@ -9,8 +9,7 @@ import karat.concrete.ConcreteFormulaBuilder
 import karat.concrete.trace
 import karat.concrete.progression.Info
 import karat.concrete.progression.Step
-import karat.concrete.progression.check
-import karat.concrete.progression.checkSuspend
+import karat.concrete.progression.suspend.check
 
 public typealias KotestFormulaBuilder<ConcreteState, Action, Response> =
   ConcreteFormulaBuilder<Result<Info<Action, ConcreteState, Response>>, Unit>
@@ -64,7 +63,7 @@ public suspend fun <AbstractState, ConcreteState, Action, Response> checkAgainst
 ) {
   checkAll(model.gen(range)) { actions ->
     val problem =
-      KotestStepResultManager<Info<Action, ConcreteState, Response>>().checkSuspend(formula, actions, initial, step)
+      KotestStepResultManager<Info<Action, ConcreteState, Response>>().check(formula, actions, initial, step)
     if (problem != null) throw TraceAssertionError(problem.actions, problem.state, problem.error!!)
   }
 }
@@ -95,7 +94,7 @@ public suspend fun <AbstractState, ConcreteState, Action, Response> checkTraceAg
   checkAll(model.gen(range)) { actions ->
     val translated = trace(formula)
     val problem =
-      KotestStepResultManager<Info<Action, ConcreteState, Response>>().checkSuspend(translated, actions, initial, step)
+      KotestStepResultManager<Info<Action, ConcreteState, Response>>().check(translated, actions, initial, step)
     if (problem != null) throw TraceAssertionError(problem.actions, problem.state, problem.error!!)
   }
 }

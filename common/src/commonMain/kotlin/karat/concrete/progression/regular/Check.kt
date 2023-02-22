@@ -1,42 +1,20 @@
-package karat.concrete.progression
+package karat.concrete.progression.regular
 
 import karat.concrete.*
+import karat.concrete.progression.*
 
-// Based on the Quickstrom paper
-// https://arxiv.org/pdf/2203.11532.pdf,
-// which is in turned based on formula progression
-// https://users.cecs.anu.edu.au/~thiebaux/papers/icaps05.pdf
-
-public interface StepResultManager<A, R, E> {
-  public val everythingOk: E
-  public val falseFormula: E
-  public val unknown: E
-  public fun negationWasTrue(formula: Formula<A, R>): E
-  public fun shouldHoldEventually(formula: Formula<A, R>): E
-  public val E.isOk: Boolean
-  public fun andResults(results: List<E>): E
-  public fun orResults(results: List<E>): E
-  public suspend fun predicate(test: (A) -> R, value: A): E
+public interface RegularStepResultManager<A, R, E>: StepResultManager<A, R, E> {
+  public fun predicate(test: (A) -> R, value: A): E
 }
 
-public interface SuspendStepResultManager<A, R, E>: StepResultManager<A, R, E> {
-  public suspend fun suspendPredicate(test: suspend (A) -> R, value: A): E
-  override suspend fun predicate(test: (A) -> R, value: A): E = suspendPredicate({ test(it) }, value)
-}
-
-public data class FormulaStep<A, R, E>(val result: E, val next: Formula<A, R>)
-
-public suspend fun <A, R, E> StepResultManager<A, R, E>.checkAtomic(formula: Atomic<A, R>, x: A): E = when (formula) {
+public fun <A, R, E> RegularStepResultManager<A, R, E>.checkAtomic(formula: Atomic<A, R>, x: A): E = when (formula) {
   is TRUE -> everythingOk
   is FALSE -> falseFormula
   is NonSuspendedPredicate -> predicate(formula.nonSuspendedTest, x)
-  is Predicate -> when (this) {
-    is SuspendStepResultManager -> suspendPredicate(formula.test, x)
-    else -> throw IllegalStateException("this runner does not support suspended functions")
-  }
+  is Predicate -> throw IllegalStateException("suspended predicated are not supported")
 }
 
-public suspend fun <A, R, E> StepResultManager<A, R, E>.check(formula: Formula<A, R>, x: A): FormulaStep<A, R, E> = when (formula) {
+public fun <A, R, E> RegularStepResultManager<A, R, E>.check(formula: Formula<A, R>, x: A): FormulaStep<A, R, E> = when (formula) {
   is Atomic ->
     FormulaStep(checkAtomic(formula, x), TRUE)
   is Not -> {
@@ -90,7 +68,7 @@ public suspend fun <A, R, E> StepResultManager<A, R, E>.check(formula: Formula<A
 
 // is there something missing to prove?
 // if we have 'eventually', we cannot conclude
-public fun <A, R, E> StepResultManager<A, R, E>.leftToProve(formula: Formula<A, R>): E = when (formula) {
+public fun <A, R, E> RegularStepResultManager<A, R, E>.leftToProve(formula: Formula<A, R>): E = when (formula) {
   // atomic predicates are done
   is Atomic -> everythingOk
   is Not -> everythingOk
@@ -105,4 +83,27 @@ public fun <A, R, E> StepResultManager<A, R, E>.leftToProve(formula: Formula<A, 
   is Always -> everythingOk
   // we have an 'eventually' missing
   is Eventually -> shouldHoldEventually(formula.formula)
+}
+
+public tailrec fun <Action, State, Response, Test, Error>
+  RegularStepResultManager<Result<Info<Action, State, Response>>, Test, Error>.check(
+  formula: Formula<Result<Info<Action, State, Response>>, Test>,
+  actions: List<Action>,
+  current: State,
+  step: (Action, State) -> Step<State, Response>,
+  previousActions: MutableList<Action> = mutableListOf()
+): Problem<Action, State, Error>? = when {
+  actions.isEmpty() -> problem(leftToProve(formula), previousActions, current)
+  else -> {
+    val action = actions.first()
+    val oneStepFurther = runCatching { step(action, current) }.map { Info(action, current, it.state, it.response) }
+    val progress = check(formula, oneStepFurther)
+    val next = oneStepFurther.getOrNull()
+    previousActions.add(action)
+    when {
+      !progress.result.isOk -> Problem(previousActions, current, progress.result)
+      next == null -> problem(leftToProve(progress.next), previousActions, current)
+      else -> check(progress.next, actions.drop(1), next.nextState, step, previousActions)
+    }
+  }
 }

@@ -1,23 +1,19 @@
 package karat.scalacheck
 
-import karat.concrete.Formula
-import karat.concrete.progression.{CheckKt, Info, ProgressionKt, Step, StepResultManager}
+import karat.concrete.progression.regular.{CheckKt, RegularStepResultManager}
+import karat.concrete.progression.{Info, Step}
 import karat.scalacheck.KotlinUtils.resultToTry
-import karat.util.UtilKt.resumeContinuation
-import kotlin.Result
-import kotlin.coroutines.Continuation
 import kotlin.jvm.functions
 import org.scalacheck.Prop
 
-import java.util
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 import scala.jdk.CollectionConverters._
 
 object Scalacheck {
   type Atomic[A] = karat.concrete.Atomic[Try[A], Prop.Result]
   type Formula[A] = karat.concrete.Formula[Try[A], Prop.Result]
 
-  class ScalacheckStepResultManager[A] extends StepResultManager[A, Prop.Result, Prop.Result] {
+  class ScalacheckStepResultManager[A] extends RegularStepResultManager[A, Prop.Result, Prop.Result] {
     override def getEverythingOk: Prop.Result = Prop.Result(Prop.True)
     override def getFalseFormula: Prop.Result = Prop.Result(Prop.False)
     override def getUnknown: Prop.Result = Prop.Result(Prop.Undecided)
@@ -30,8 +26,8 @@ object Scalacheck {
       Prop.Result(Prop.False).label("negation was true")
     override def shouldHoldEventually(formula: karat.concrete.Formula[_ >: A, _ <: Prop.Result]): Prop.Result =
       Prop.Result(Prop.False).label("should hold eventually")
-    override def predicate(test: functions.Function1[_ >: A, _ <: Prop.Result], value: A, k: Continuation[_ >: Prop.Result]): Any =
-      resumeContinuation[Prop.Result](k, test.invoke(value))
+    override def predicate(test: functions.Function1[_ >: A, _ <: Prop.Result], value: A): Prop.Result =
+      test.invoke(value)
   }
 
   def checkFormula[Action, State, Response](actions: List[Action], initial: State, step: (Action, State) => Step[State, Response])(

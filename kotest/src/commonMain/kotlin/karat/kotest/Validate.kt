@@ -8,6 +8,7 @@ import io.kotest.matchers.should
 import io.kotest.matchers.types.beInstanceOf
 import karat.concrete.*
 import karat.concrete.progression.*
+import karat.concrete.progression.suspend.SuspendStepResultManager
 import kotlin.reflect.KClass
 
 public typealias KotestAtomic<A> = Atomic<Result<A>, Unit>
@@ -25,7 +26,7 @@ public class KotestStepResultManager<A>: SuspendStepResultManager<Result<A>, Uni
     if (results.all { it.isOk }) everythingOk else results.flatMap { it.orEmpty() }
   override fun orResults(results: List<List<AssertionError>?>): List<AssertionError>? =
     if (results.any { it.isOk }) everythingOk else results.flatMap { it.orEmpty() }
-  override suspend fun suspendPredicate(test: suspend (Result<A>) -> Unit, value: Result<A>): List<AssertionError>? =
+  override suspend fun predicate(test: suspend (Result<A>) -> Unit, value: Result<A>): List<AssertionError>? =
     try {
       test(value)
       null

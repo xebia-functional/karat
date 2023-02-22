@@ -17,18 +17,8 @@ kotlin {
   }
 
   sourceSets {
-    val commonMain by getting {
-      dependencies {
-        api(libs.kotlinx.coroutines)
-      }
-    }
-    val jvmMain by getting {
-      dependencies {
-        api(libs.kotlin.stdlibJdk)
-        api(libs.kotlinx.coroutinesJvm)
-        api(libs.kotlinx.coroutinesJdk)
-      }
-    }
+    val commonMain by getting
+    val jvmMain by getting
   }
 }
 
