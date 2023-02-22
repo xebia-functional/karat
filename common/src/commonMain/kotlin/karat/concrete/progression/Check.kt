@@ -1,6 +1,7 @@
 package karat.concrete.progression
 
 import karat.concrete.Formula
+import kotlinx.coroutines.runBlocking
 
 public data class Step<out State, out Response>(
   val state: State,
@@ -19,8 +20,19 @@ public data class Problem<Action, State, Error>(
   val error: Error
 )
 
-public tailrec suspend fun <Action, State, Response, Test, Error>
+public fun <Action, State, Response, Test, Error>
   StepResultManager<Result<Info<Action, State, Response>>, Test, Error>.check(
+  formula: Formula<Result<Info<Action, State, Response>>, Test>,
+  actions: List<Action>,
+  current: State,
+  step: (Action, State) -> Step<State, Response>,
+  previousActions: MutableList<Action> = mutableListOf()
+): Problem<Action, State, Error>? = runBlocking {
+  check(formula, actions, current, step, previousActions)
+}
+
+public tailrec suspend fun <Action, State, Response, Test, Error>
+  StepResultManager<Result<Info<Action, State, Response>>, Test, Error>.checkSuspend(
   formula: Formula<Result<Info<Action, State, Response>>, Test>,
   actions: List<Action>,
   current: State,
@@ -37,7 +49,7 @@ public tailrec suspend fun <Action, State, Response, Test, Error>
     when {
       !progress.result.isOk -> Problem(previousActions, current, progress.result)
       next == null -> problem(leftToProve(progress.next), previousActions, current)
-      else -> check(progress.next, actions.drop(1), next.nextState, step, previousActions)
+      else -> checkSuspend(progress.next, actions.drop(1), next.nextState, step, previousActions)
     }
   }
 }

@@ -19,10 +19,10 @@ public class ConcreteFormulaBuilder<A, R>: FormulaBuilder<A, suspend (A) -> R, F
   override fun not(formula: Atomic<A, R>): Formula<A, R> = Not(formula)
   override fun and(formulae: List<Formula<A, R>>): Formula<A, R> = karat.concrete.and(formulae)
   override fun or(formulae: List<Formula<A, R>>): Formula<A, R> = karat.concrete.or(formulae)
-  override fun implies(condition: Atomic<A, R>, then: Formula<A, R>): Formula<A, R> = Implies(condition, then)
-  override fun next(formula: Formula<A, R>): Formula<A, R> = Next(formula)
-  override fun always(formula: Formula<A, R>): Formula<A, R> = Always(formula)
-  override fun eventually(formula: Formula<A, R>): Formula<A, R> = Eventually(formula)
+  override fun implies(condition: Atomic<A, R>, then: Formula<A, R>): Formula<A, R> = karat.concrete.implies(condition, then)
+  override fun next(formula: Formula<A, R>): Formula<A, R> = karat.concrete.next(formula)
+  override fun always(formula: Formula<A, R>): Formula<A, R> = karat.concrete.always(formula)
+  override fun eventually(formula: Formula<A, R>): Formula<A, R> = karat.concrete.eventually(formula)
   override fun remember(block: (A) -> Formula<A, R>): Formula<A, R> = Remember(block)
 }
 
@@ -124,3 +124,15 @@ public data class Always<in A, out R>(
 public data class Eventually<in A, out R>(
   val formula: Formula<A, R>
 ): Formula<A, R>
+
+public fun <A, R> implies(condition: Atomic<A, R>, then: Formula<A, R>): Formula<A, R> =
+  Implies(condition, then)
+
+public fun <A, R> next(formula: Formula<A, R>): Formula<A, R> =
+  Next(formula)
+
+public fun <A, R> always(formula: Formula<A, R>): Formula<A, R> =
+  Always(formula)
+
+public fun <A, R> eventually(formula: Formula<A, R>): Formula<A, R> =
+  Eventually(formula)
