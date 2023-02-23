@@ -64,13 +64,13 @@ object TestCounter extends Properties("Sample") {
   val stepAction: (Action, Int) => Step[Int, Int] = right
   val initialFormula: Formula[Info[Action, Int, Int]] = formula
 
-  property("checkRight") = forAll(model.gen) { actions =>
+  val validProperty: Prop = forAll(model.gen) { actions =>
     checkFormula(actions, initialState, stepAction)(initialFormula)
   }
 
-  // property("checkWrong") = forAll(model.gen) { actions =>
-  //   checkFormula(actions, initialState, wrong)(initialFormula)
-  // }
+  val invalidProperty: Prop = forAll(model.gen) { actions =>
+    checkFormula(actions, initialState, wrong)(initialFormula)
+  }
 
   // property("checkThrow") = forAll(model.gen) { actions =>
   //   checkFormula(actions, initialState, error)(initialFormula)
