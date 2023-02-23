@@ -85,24 +85,27 @@ public fun <A, R, E> SuspendStepResultManager<A, R, E>.leftToProve(formula: Form
 }
 
 public tailrec suspend fun <Action, State, Response, Test, Error>
-  SuspendStepResultManager<Result<Info<Action, State, Response>>, Test, Error>.check(
-  formula: Formula<Result<Info<Action, State, Response>>, Test>,
+  SuspendStepResultManager<Info<Action, State, Response>, Test, Error>.check(
+  formula: Formula<Info<Action, State, Response>, Test>,
   actions: List<Action>,
   current: State,
-  step: suspend (Action, State) -> Step<State, Response>,
+  step: suspend (Action, State) -> Step<State, Response>?,
   previousActions: MutableList<Action> = mutableListOf()
 ): Problem<Action, State, Error>? = when {
   actions.isEmpty() -> problem(leftToProve(formula), previousActions, current)
   else -> {
     val action = actions.first()
-    val oneStepFurther = runCatching { step(action, current) }.map { Info(action, current, it.state, it.response) }
-    val progress = check(formula, oneStepFurther)
-    val next = oneStepFurther.getOrNull()
-    previousActions.add(action)
-    when {
-      !progress.result.isOk -> Problem(previousActions, current, progress.result)
-      next == null -> problem(leftToProve(progress.next), previousActions, current)
-      else -> check(progress.next, actions.drop(1), next.nextState, step, previousActions)
+    val oneStepFurther =
+      step(action, current)?.let { Info(action, current, it.state, it.response) }
+    when (oneStepFurther) {
+      null -> problem(leftToProve(formula), previousActions, current)
+      else -> {
+        val progress = check(formula, oneStepFurther)
+        when {
+          !progress.result.isOk -> Problem(previousActions, current, progress.result)
+          else -> check(progress.next, actions.drop(1), oneStepFurther.nextState, step, previousActions)
+        }
+      }
     }
   }
 }

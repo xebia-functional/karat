@@ -2,16 +2,14 @@ package karat.scalacheck
 
 import karat.concrete.progression.regular.{CheckKt, RegularStepResultManager}
 import karat.concrete.progression.{Info, Step}
-import karat.scalacheck.KotlinUtils.resultToTry
 import kotlin.jvm.functions
 import org.scalacheck.Prop
 
-import scala.util.Try
 import scala.jdk.CollectionConverters._
 
 object Scalacheck {
-  type Atomic[A] = karat.concrete.Atomic[Try[A], Prop.Result]
-  type Formula[A] = karat.concrete.Formula[Try[A], Prop.Result]
+  type Atomic[A] = karat.concrete.Atomic[A, Prop.Result]
+  type Formula[A] = karat.concrete.Formula[A, Prop.Result]
 
   class ScalacheckStepResultManager[A] extends RegularStepResultManager[A, Prop.Result, Prop.Result] {
     override def getEverythingOk: Prop.Result = Prop.Result(Prop.True)
@@ -35,7 +33,7 @@ object Scalacheck {
   ): Prop = {
     val problem = CheckKt.check[Action, State, Response, Prop.Result, Prop.Result](
       new ScalacheckStepResultManager(),
-      formula.map(x => resultToTry(x.asInstanceOf[kotlin.Result[Info[Action, State, Response]]]), x => x),
+      formula.asInstanceOf[Formula[Info[_ <: Action, _ <: State, _ <: Response]]],
       actions.asJava,
       initial,
       (action, current) => { step(action, current) },

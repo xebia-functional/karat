@@ -1,7 +1,6 @@
 package karat.concrete.progression
 
 import karat.concrete.Formula
-import kotlinx.coroutines.runBlocking
 
 // Based on the Quickstrom paper
 // https://arxiv.org/pdf/2203.11532.pdf,
@@ -25,6 +24,7 @@ public data class Step<out State, out Response>(
   val state: State,
   val response: Response
 )
+
 public data class Info<out Action, out State, out Response>(
   val action: Action,
   val previousState: State,

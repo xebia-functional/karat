@@ -50,8 +50,8 @@ public suspend inline fun <State, reified R: Any> HttpClient.checkAgainst(
   model: ArbModel<State, RequestInfo<R>>,
   range: IntRange = 1 .. 100,
   noinline formula: HttpFormulaBuilder<R>.() -> HttpFormula<R>
-): Unit = checkAgainst(
-  model, this, { req, client -> Step(client, client.performRequest(req)) }, range, formula
+): Unit = checkAgainst<State, HttpClient, RequestInfo<R>, HttpResponse>(
+  model, this, { req: RequestInfo<R>, client: HttpClient -> Step(client, client.performRequest(req)) }, range, formula
 )
 
 @PublishedApi internal suspend inline fun <reified R: Any> HttpClient.performRequest(

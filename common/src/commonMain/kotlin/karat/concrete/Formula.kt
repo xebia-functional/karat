@@ -92,6 +92,10 @@ public class NonSuspendedPredicate<in A, out R>(
   public val nonSuspendedTest: (A) -> R
 ): Predicate<A, R>({ nonSuspendedTest(it) })
 
+public fun <A, R> predicate(
+  test: (A) -> R
+): Predicate<A, R> = NonSuspendedPredicate(test)
+
 public data class Not<in A, out R>(
   val formula: Atomic<A, R>
 ): Formula<A, R>

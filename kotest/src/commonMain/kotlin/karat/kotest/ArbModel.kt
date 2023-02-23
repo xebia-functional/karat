@@ -12,7 +12,7 @@ import karat.concrete.progression.Step
 import karat.concrete.progression.suspend.check
 
 public typealias KotestFormulaBuilder<ConcreteState, Action, Response> =
-  ConcreteFormulaBuilder<Result<Info<Action, ConcreteState, Response>>, Unit>
+  ConcreteFormulaBuilder<Info<Action, ConcreteState, Response>, Unit>
 
 public interface ArbModel<State, Action> {
   public val initial: State
@@ -57,7 +57,7 @@ public fun <State, Action> ArbModel<State, Action>.gen(
 public suspend fun <AbstractState, ConcreteState, Action, Response> checkAgainst(
   model: ArbModel<AbstractState, Action>,
   initial: ConcreteState,
-  step: suspend (Action, ConcreteState) -> Step<ConcreteState, Response>,
+  step: suspend (Action, ConcreteState) -> Step<ConcreteState, Response>?,
   range: IntRange = 1 .. 100,
   formula: KotestFormula<Info<Action, ConcreteState, Response>>
 ) {
@@ -71,22 +71,22 @@ public suspend fun <AbstractState, ConcreteState, Action, Response> checkAgainst
 public suspend fun <AbstractState, ConcreteState, Action, Response> checkAgainst(
   model: ArbModel<AbstractState, Action>,
   initial: ConcreteState,
-  step: suspend (Action, ConcreteState) -> Step<ConcreteState, Response>,
+  step: suspend (Action, ConcreteState) -> Step<ConcreteState, Response>?,
   range: IntRange = 1 .. 100,
-  formula: ConcreteFormulaBuilder<Result<Info<Action, ConcreteState, Response>>, Unit>.() -> KotestFormula<Info<Action, ConcreteState, Response>>
+  formula: ConcreteFormulaBuilder<Info<Action, ConcreteState, Response>, Unit>.() -> KotestFormula<Info<Action, ConcreteState, Response>>
 ): Unit =
-  ConcreteFormulaBuilder<Result<Info<Action, ConcreteState, Response>>, Unit>()
+  ConcreteFormulaBuilder<Info<Action, ConcreteState, Response>, Unit>()
     .run(formula)
     .let { checkAgainst(model, initial, step, range, it) }
 
 public suspend fun <AbstractState, ConcreteState, Action, Response> checkTraceAgainst(
   model: ArbModel<AbstractState, Action>,
   initial: ConcreteState,
-  step: suspend (Action, ConcreteState) -> Step<ConcreteState, Response>,
+  step: suspend (Action, ConcreteState) -> Step<ConcreteState, Response>?,
   range: IntRange = 1 .. 100,
   formula: suspend TraceFormulaBuilder<
-      Result<Info<Action, ConcreteState, Response>>,
-      suspend (Result<Info<Action, ConcreteState, Response>>) -> Unit,
+      Info<Action, ConcreteState, Response>,
+      suspend (Info<Action, ConcreteState, Response>) -> Unit,
       KotestFormula<Info<Action, ConcreteState, Response>>,
       KotestAtomic<Info<Action, ConcreteState, Response>>
     >.() -> Unit

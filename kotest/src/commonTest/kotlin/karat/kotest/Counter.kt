@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.enum
+import karat.concrete.progression.Info
 import karat.concrete.progression.Step
 
 enum class Action {
@@ -44,8 +45,8 @@ class StateMachineSpec: StringSpec({
   "at least zero, version 2" {
     shouldFail {
       checkTraceAgainst(model, -2, ::right) {
-        whenCurrent { item<Action, Int, Int> { it.action shouldBe Action.READ } }
-        checkCurrent { item<Action, Int, Int> { it.response.shouldBeGreaterThanOrEqual(0) } }
+        whenCurrent { should<Info<Action, Int, Int>> { it.action shouldBe Action.READ } }
+        checkCurrent { should<Info<Action, Int, Int>> { it.response.shouldBeGreaterThanOrEqual(0) } }
       }
     }
   }
@@ -56,7 +57,7 @@ class StateMachineSpec: StringSpec({
           implies(
             should { it.action shouldBe Action.READ },
             remember { current ->
-              val rememberedResponse = current.getOrNull()!!.response
+              val rememberedResponse = current.response
               afterwards(
                 implies(
                   should { it.action shouldBe Action.READ },
@@ -72,11 +73,11 @@ class StateMachineSpec: StringSpec({
   "always increasing, version 2" {
     shouldFail {
       checkTraceAgainst(model, 0, ::wrong) {
-        whenCurrent { item<Action, Int, Int> { it.action shouldBe Action.READ } }
-        val previousResponse = remember().getOrNull()!!.response
+        whenCurrent { should<Info<Action, Int, Int>> { it.action shouldBe Action.READ } }
+        val previousResponse = remember().response
         oneOrMoreSteps()
-        whenCurrent { item<Action, Int, Int> { it.action shouldBe Action.READ } }
-        checkCurrent { item<Action, Int, Int> { it.response.shouldBeGreaterThanOrEqual(previousResponse) } }
+        whenCurrent { should<Info<Action, Int, Int>> { it.action shouldBe Action.READ } }
+        checkCurrent { should<Info<Action, Int, Int>> { it.response.shouldBeGreaterThanOrEqual(previousResponse) } }
       }
     }
   }

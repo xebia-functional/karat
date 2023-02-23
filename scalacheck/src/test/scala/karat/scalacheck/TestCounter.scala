@@ -1,9 +1,8 @@
 package karat.scalacheck
 
-import karat.concrete.FormulaKt.always
+import karat.concrete.FormulaKt.{always, predicate}
 import karat.concrete.progression.{Info, Step}
 import karat.scalacheck.Scalacheck.{Formula, checkFormula}
-import karat.scalacheck.Formula.holds
 import org.scalacheck.{Arbitrary, Gen, Prop, Properties}
 
 object TestCounter extends Properties("Sample") {
@@ -48,7 +47,7 @@ object TestCounter extends Properties("Sample") {
 
   def formula: Formula[Info[Action, Int, Int]] =
     always {
-      holds(
+      predicate(
         (item: Info[Action, Int, Int]) => {
           // TODO: provide better accessors
           val status = item.getAction match {
@@ -65,13 +64,13 @@ object TestCounter extends Properties("Sample") {
   val stepAction: (Action, Int) => Step[Int, Int] = right
   val initialFormula: Formula[Info[Action, Int, Int]] = formula
 
-  // property("checkRight") = forAll(model.gen) { actions =>
-  //   checkFormula(actions, initialState, stepAction)(initialFormula)
-  // }
-
-  property("checkWrong") = forAll(model.gen) { actions =>
-    checkFormula(actions, initialState, wrong)(initialFormula)
+  property("checkRight") = forAll(model.gen) { actions =>
+    checkFormula(actions, initialState, stepAction)(initialFormula)
   }
+
+  // property("checkWrong") = forAll(model.gen) { actions =>
+  //   checkFormula(actions, initialState, wrong)(initialFormula)
+  // }
 
   // property("checkThrow") = forAll(model.gen) { actions =>
   //   checkFormula(actions, initialState, error)(initialFormula)

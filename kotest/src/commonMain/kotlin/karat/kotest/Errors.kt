@@ -12,7 +12,6 @@ public data class NegationWasTrue(
   public val formula: KotestFormula<*>
 ): AssertionError("negated condition was true") {
   public companion object {
-    @Suppress("UNCHECKED_CAST")
     public operator fun <A> invoke(formula: KotestFormula<A>): NegationWasTrue =
       NegationWasTrue(formula as KotestFormula<*>)
   }
@@ -22,7 +21,6 @@ public data class ShouldHoldEventually(
   public val formula: KotestFormula<*>
 ): AssertionError("should hold eventually") {
   public companion object {
-    @Suppress("UNCHECKED_CAST")
     public operator fun <A> invoke(formula: KotestFormula<A>): ShouldHoldEventually =
       ShouldHoldEventually(formula as KotestFormula<*>)
   }
