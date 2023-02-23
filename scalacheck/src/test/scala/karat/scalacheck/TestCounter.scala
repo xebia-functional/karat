@@ -3,8 +3,11 @@ package karat.scalacheck
 import karat.concrete.FormulaKt.{always, predicate}
 import karat.concrete.progression.{Info, Step}
 import karat.scalacheck.Scalacheck.{Formula, checkFormula}
+import org.junit.runner.RunWith
+import org.scalacheck.contrib.ScalaCheckJUnitPropertiesRunner
 import org.scalacheck.{Arbitrary, Gen, Prop, Properties}
 
+@RunWith(classOf[ScalaCheckJUnitPropertiesRunner])
 object TestCounter extends Properties("Sample") {
 
   import org.scalacheck.Prop.forAll
