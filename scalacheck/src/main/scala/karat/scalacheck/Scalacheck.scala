@@ -1,5 +1,7 @@
 package karat.scalacheck
 
+import cats._
+import cats.syntax.all._
 import karat.concrete.progression.regular.{CheckKt, RegularStepResultManager}
 import karat.concrete.progression.{Info, Step}
 import kotlin.jvm.functions
@@ -41,4 +43,38 @@ object Scalacheck {
     )
     if (problem == null) Prop.passed else Prop(problem.getError)
   }
+
+  def checkFormula[F[_] : Monad, Action, State, Response](actions: List[Action], initial: F[State], step: (Action, State) => F[Step[State, Response]])(
+    formula: Formula[Info[Action, State, Response]]
+  ): F[Prop] =
+    for {
+      current <- initial
+      result <- checkFormula(new ScalacheckStepResultManager[Info[Action, State, Response]](), step, actions, current, formula)
+    } yield result
+
+  def checkFormula[F[_] : Monad, Action, State, Response](
+    resultManager: ScalacheckStepResultManager[Info[Action, State, Response]],
+    step: (Action, State) => F[Step[State, Response]],
+    actions: List[Action],
+    current: State,
+    formula: Formula[Info[Action, State, Response]]
+  ): F[Prop] = Monad[F].tailRecM((actions, current, formula)) { case (actions, current, formula) =>
+    actions match {
+      case Nil =>
+        val left = CheckKt.leftToProve(resultManager, formula)
+        if (left == null || resultManager.isOk(left)) Prop.passed.asRight.pure else Prop(left).asRight.pure
+      case action :: rest => step(action, current).flatMap {
+        case null =>
+          val left = CheckKt.leftToProve(resultManager, formula)
+          if (left == null || resultManager.isOk(left)) Prop.passed.asRight.pure else Prop(left).asRight.pure
+        case oneStepFurther@_ =>
+          val progress = CheckKt.check(resultManager, formula, new Info(action, current, oneStepFurther.getState, oneStepFurther.getResponse))
+          if (!resultManager.isOk(progress.getResult))
+            Prop(progress.getResult).asRight.pure
+          else
+            (rest, oneStepFurther.getState, progress.getNext).asLeft.pure
+      }
+    }
+  }
+
 }
