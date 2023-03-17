@@ -60,10 +60,10 @@ object Scalacheck {
     formula: Formula[Info[Action, State, Response]]
   ): F[Prop] = Monad[F].tailRecM((actions, current, formula)) {
     case (Nil, _, formula) =>
-      resultToProp(CheckKt.leftToProve(resultManager, formula)).asRight.pure
+      resultToProp(resultManager, CheckKt.leftToProve(resultManager, formula)).asRight.pure
     case (action :: rest, current, formula) => step(action, current).flatMap {
         case null =>
-          resultToProp(CheckKt.leftToProve(resultManager, formula)).asRight.pure
+          resultToProp(resultManager, CheckKt.leftToProve(resultManager, formula)).asRight.pure
         case oneStepFurther@_ =>
           val progress = CheckKt.check(resultManager, formula, new Info(action, current, oneStepFurther.getState, oneStepFurther.getResponse))
           if (!resultManager.isOk(progress.getResult))
@@ -73,7 +73,9 @@ object Scalacheck {
       }
     }
 
-  private def resultToProp(result: Prop.Result) =
-    if (resultManager.isOk(result)) Prop.passed else Prop(left)
+  private def resultToProp[Action, State, Response](
+    resultManager: ScalacheckStepResultManager[Info[Action, State, Response]],
+    result: Prop.Result
+  ): Prop = if (resultManager.isOk(result)) Prop.passed else Prop(result)
 
 }
