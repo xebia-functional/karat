@@ -4,8 +4,10 @@ plugins {
 
 dependencies {
   implementation(projects.karatCommon)
-  implementation(libs.scalacheck)
+  implementation(libs.scalacheck.core)
   implementation(libs.cats.core)
-  testImplementation(libs.scalacheckContrib)
+  testImplementation(libs.cats.effect)
+  testImplementation(libs.scalacheck.contrib)
+  testImplementation(libs.scalacheck.effect)
   testRuntimeOnly(libs.junit.jupiter)
 }

@@ -1,10 +1,12 @@
 package karat.scalacheck
 
+import cats.effect.IO
 import karat.concrete.FormulaKt.{always, predicate}
 import karat.concrete.progression.{Info, Step}
 import karat.scalacheck.Scalacheck.{Formula, checkFormula}
 import org.junit.runner.RunWith
 import org.scalacheck.contrib.ScalaCheckJUnitPropertiesRunner
+import org.scalacheck.effect.PropF.forAllF
 import org.scalacheck.{Arbitrary, Gen, Prop, Properties}
 
 @RunWith(classOf[ScalaCheckJUnitPropertiesRunner])
@@ -69,6 +71,10 @@ object TestCounter extends Properties("Sample") {
 
   property("checkRight") = forAll(model.gen) { actions =>
     checkFormula(actions, initialState, stepAction)(initialFormula)
+  }
+
+  property("checkRightIO") = forAllF[IO, _, _](model.gen) { actions =>
+    checkFormula[IO, Action, Int, Int](actions, IO(initialState), (action: Action, state: Int) => IO(stepAction(action, state)))(initialFormula)
   }
 
   // property("checkWrong") = forAll(model.gen) { actions =>
