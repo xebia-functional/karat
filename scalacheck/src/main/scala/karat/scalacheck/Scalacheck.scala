@@ -46,11 +46,7 @@ object Scalacheck {
 
   def checkFormula[F[_] : Monad, Action, State, Response](actions: List[Action], initial: F[State], step: (Action, State) => F[Step[State, Response]])(
     formula: Formula[Info[Action, State, Response]]
-  ): F[Prop] =
-    for {
-      current <- initial
-      result <- checkFormula(new ScalacheckStepResultManager[Info[Action, State, Response]](), step, actions, current, formula)
-    } yield result
+  ): F[Prop] = initial.flatMap(checkFormula(new ScalacheckStepResultManager[Info[Action, State, Response]](), step, actions, _, formula))
 
   def checkFormula[F[_] : Monad, Action, State, Response](
     resultManager: ScalacheckStepResultManager[Info[Action, State, Response]],
