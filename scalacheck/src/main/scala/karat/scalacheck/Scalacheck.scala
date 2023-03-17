@@ -30,7 +30,7 @@ object Scalacheck {
       test.invoke(value)
   }
 
-  def checkFormula[Action, State, Response](actions: List[Action], initial: State, step: (Action, State) => Step[State, Response])(
+  def checkFormula[Action, State, Response](actions: List[Action], initial: State, step: (Action, State) => Option[Step[State, Response]])(
     formula: Formula[Info[Action, State, Response]]
   ): Prop = {
     val problem = CheckKt.check[Action, State, Response, Prop.Result, Prop.Result](
@@ -38,19 +38,19 @@ object Scalacheck {
       formula.asInstanceOf[Formula[Info[_ <: Action, _ <: State, _ <: Response]]],
       actions.asJava,
       initial,
-      (action, current) => { step(action, current) },
+      (action, current) => step(action, current).orNull,
       new java.util.ArrayList()
     )
     if (problem == null) Prop.passed else Prop(problem.getError)
   }
 
-  def checkFormula[F[_] : Monad, Action, State, Response](actions: List[Action], initial: F[State], step: (Action, State) => F[Step[State, Response]])(
+  def checkFormula[F[_] : Monad, Action, State, Response](actions: List[Action], initial: F[State], step: (Action, State) => F[Option[Step[State, Response]]])(
     formula: Formula[Info[Action, State, Response]]
   ): F[Prop] = initial.flatMap(checkFormula(new ScalacheckStepResultManager[Info[Action, State, Response]](), step, actions, _, formula))
 
   def checkFormula[F[_] : Monad, Action, State, Response](
     resultManager: ScalacheckStepResultManager[Info[Action, State, Response]],
-    step: (Action, State) => F[Step[State, Response]],
+    step: (Action, State) => F[Option[Step[State, Response]]],
     actions: List[Action],
     current: State,
     formula: Formula[Info[Action, State, Response]]
@@ -58,9 +58,9 @@ object Scalacheck {
     case (Nil, _, formula) =>
       resultToProp(resultManager, CheckKt.leftToProve(resultManager, formula)).asRight.pure
     case (action :: rest, current, formula) => step(action, current).flatMap {
-        case null =>
+        case None =>
           resultToProp(resultManager, CheckKt.leftToProve(resultManager, formula)).asRight.pure
-        case oneStepFurther@_ =>
+        case Some(oneStepFurther) =>
           val progress = CheckKt.check(resultManager, formula, new Info(action, current, oneStepFurther.getState, oneStepFurther.getResponse))
           if (!resultManager.isOk(progress.getResult))
             Prop(progress.getResult).asRight.pure

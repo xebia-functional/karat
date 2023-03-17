@@ -24,19 +24,19 @@ object TestCounter extends Properties("Sample") {
 
   val gen: Gen[Action.Value] = Gen.oneOf(Action.Increment, Action.Read)
 
-  def right(action: Action, state: Int): Step[Int, Int] = action match {
+  def right(action: Action, state: Int): Option[Step[Int, Int]] = Some(action match {
     case Action.Increment => new Step(state + 1, 0)
     case Action.Read => new Step(state, state)
-  }
+  })
 
-  def wrong(action: Action, state: Int): Step[Int, Int] = action match {
+  def wrong(action: Action, state: Int): Option[Step[Int, Int]] = Some(action match {
     case Action.Increment =>
       new Step(state + 1, 0)
     case Action.Read =>
       new Step(state, if (state == 10) -1 else state)
-  }
+  })
 
-  def error(action: Action, state: Int): Step[Int, Int] = action match {
+  def error(action: Action, state: Int): Option[Step[Int, Int]] = Some(action match {
     case Action.Increment => new Step(state + 1, 0)
     case Action.Read =>
       new Step(
@@ -46,7 +46,7 @@ object TestCounter extends Properties("Sample") {
           state + 1
         }
       )
-  }
+  })
 
   def formula: Formula[Info[Action, Int, Int]] =
     always {
@@ -64,7 +64,7 @@ object TestCounter extends Properties("Sample") {
     }
 
   val initialState: Int = 0
-  val stepAction: (Action, Int) => Step[Int, Int] = right
+  val stepAction: (Action, Int) => Option[Step[Int, Int]] = right
   val initialFormula: Formula[Info[Action, Int, Int]] = formula
 
   property("checkRight") = forAll(model.gen) { actions =>
