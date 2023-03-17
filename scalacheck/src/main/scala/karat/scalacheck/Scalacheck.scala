@@ -17,7 +17,7 @@ object Scalacheck {
     override def getEverythingOk: Prop.Result = Prop.Result(Prop.True)
     override def getFalseFormula: Prop.Result = Prop.Result(Prop.False)
     override def getUnknown: Prop.Result = Prop.Result(Prop.Undecided)
-    override def isOk(result: Prop.Result): Boolean = result.success
+    override def isOk(result: Prop.Result): Boolean = result == null || result.success
     override def andResults(results: java.util.List[_ <: Prop.Result]): Prop.Result =
       results.asScala.fold(Prop.Result(Prop.True))((x: Prop.Result, y: Prop.Result) => x && y)
     override def orResults(results: java.util.List[_ <: Prop.Result]): Prop.Result =
@@ -61,12 +61,10 @@ object Scalacheck {
   ): F[Prop] = Monad[F].tailRecM((actions, current, formula)) { case (actions, current, formula) =>
     actions match {
       case Nil =>
-        val left = CheckKt.leftToProve(resultManager, formula)
-        if (left == null || resultManager.isOk(left)) Prop.passed.asRight.pure else Prop(left).asRight.pure
+        resultToProp(CheckKt.leftToProve(resultManager, formula)).asRight.pure
       case action :: rest => step(action, current).flatMap {
         case null =>
-          val left = CheckKt.leftToProve(resultManager, formula)
-          if (left == null || resultManager.isOk(left)) Prop.passed.asRight.pure else Prop(left).asRight.pure
+          resultToProp(CheckKt.leftToProve(resultManager, formula)).asRight.pure
         case oneStepFurther@_ =>
           val progress = CheckKt.check(resultManager, formula, new Info(action, current, oneStepFurther.getState, oneStepFurther.getResponse))
           if (!resultManager.isOk(progress.getResult))
@@ -76,5 +74,8 @@ object Scalacheck {
       }
     }
   }
+
+  private def resultToProp(result: Prop.Result) =
+    if (resultManager.isOk(result)) Prop.passed else Prop(left)
 
 }
