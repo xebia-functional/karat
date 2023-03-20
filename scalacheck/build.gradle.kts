@@ -1,4 +1,5 @@
 plugins {
+  `karat-publishing-config`
   scala
 }
 

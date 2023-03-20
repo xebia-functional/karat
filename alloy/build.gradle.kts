@@ -3,6 +3,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+  id("karat-publishing-config")
   alias(libs.plugins.kotlin.jvm)
 }
 

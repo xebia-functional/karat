@@ -3,15 +3,13 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+  `karat-publishing-config`
   alias(libs.plugins.kotlin.multiplatform)
-}
-
-dependencies {
-
 }
 
 kotlin {
   explicitApi()
+
   jvm {
     jvmToolchain(8)
   }
