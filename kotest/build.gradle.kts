@@ -12,7 +12,16 @@ kotlin {
   // set targets
   jvm {
     jvmToolchain(8)
+    withJava()
   }
+
+  js(IR) {
+    browser()
+    nodejs()
+  }
+
+  linuxX64()
+  macosX64()
 
   sourceSets {
     val commonMain by getting {
@@ -33,6 +42,19 @@ kotlin {
     }
     val jvmMain by getting
     val jvmTest by getting {
+      dependencies {
+        runtimeOnly(libs.kotest.runnerJUnit5)
+      }
+    }
+    val jsMain by getting
+    val linuxX64Main by getting
+    val linuxX64Test by getting {
+      dependencies {
+        runtimeOnly(libs.kotest.runnerJUnit5)
+      }
+    }
+    val macosX64Main by getting
+    val macosX64Test by getting {
       dependencies {
         runtimeOnly(libs.kotest.runnerJUnit5)
       }
