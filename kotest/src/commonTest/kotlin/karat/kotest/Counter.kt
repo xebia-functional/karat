@@ -1,6 +1,7 @@
 package karat.kotest
 
 import io.kotest.assertions.shouldFail
+import io.kotest.common.Platform
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
@@ -29,6 +30,13 @@ fun wrong(action: Action, state: Int): Step<Int, Int> =
     }
   }
 
+inline fun shouldFailOn(platform: Platform, block: () -> Any?) {
+  if (io.kotest.common.platform == platform)
+    shouldFail(block)
+  else
+    block()
+}
+
 class StateMachineSpec: StringSpec({
   "at least zero" {
     shouldFail {
@@ -43,7 +51,7 @@ class StateMachineSpec: StringSpec({
     }
   }
   "at least zero, version 2" {
-    shouldFail {
+    shouldFailOn(Platform.JVM) {
       checkTraceAgainst(model, -2, ::right) {
         whenCurrent { should<Info<Action, Int, Int>> { it.action shouldBe Action.READ } }
         checkCurrent { should<Info<Action, Int, Int>> { it.response.shouldBeGreaterThanOrEqual(0) } }

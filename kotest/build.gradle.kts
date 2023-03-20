@@ -47,17 +47,10 @@ kotlin {
       }
     }
     val jsMain by getting
+    val jsTest by getting
     val linuxX64Main by getting
-    val linuxX64Test by getting {
-      dependencies {
-        runtimeOnly(libs.kotest.runnerJUnit5)
-      }
-    }
+    val linuxX64Test by getting
     val macosX64Main by getting
-    val macosX64Test by getting {
-      dependencies {
-        runtimeOnly(libs.kotest.runnerJUnit5)
-      }
-    }
+    val macosX64Test by getting
   }
 }

@@ -3,6 +3,7 @@
 plugins {
   `karat-publishing-config`
   alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.kotest.multiplatform)
   alias(libs.plugins.kotlinx.serialization)
 }
 
@@ -12,7 +13,16 @@ kotlin {
   // set targets
   jvm {
     jvmToolchain(8)
+    withJava()
   }
+
+  js(IR) {
+    browser()
+    nodejs()
+  }
+
+  linuxX64()
+  macosX64()
 
   sourceSets {
     val commonMain by getting {
@@ -44,5 +54,11 @@ kotlin {
         runtimeOnly(libs.kotest.runnerJUnit5)
       }
     }
+    val jsMain by getting
+    val jsTest by getting
+    val linuxX64Main by getting
+    val linuxX64Test by getting
+    val macosX64Main by getting
+    val macosX64Test by getting
   }
 }
