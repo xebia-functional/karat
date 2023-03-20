@@ -58,7 +58,7 @@ public class Initiate: LeaderElectionAction {
     override fun execute(x: Expr<Node>): Formula = and(
       neverBefore(x.id `in` x.outbox),
 
-      next(x.outbox) `==` current(x.outbox) + x.id,
+      next(x.outbox) eq current(x.outbox) + x.id,
       set<Node>().without(x).all { stays(it.outbox) },
 
       stays(Node::inbox),
@@ -72,10 +72,10 @@ public class Send: LeaderElectionAction {
     override fun execute(x: Expr<Node>, y: Expr<Int>): Formula = and(
       y `in` current(x.outbox),
 
-      next(x.outbox) `==` current(x.outbox) - y,
+      next(x.outbox) eq current(x.outbox) - y,
       set<Node>().without(x).all { stays(it.outbox) },
 
-      next(x.succ.inbox) `==` current(x.succ.inbox) + y,
+      next(x.succ.inbox) eq current(x.succ.inbox) + y,
       set<Node>().without(x.succ).all { stays(it.inbox) },
 
       stays(Node.Companion::Elected)
@@ -88,16 +88,16 @@ public class Read: LeaderElectionAction {
     override fun execute(x: Expr<Node>, y: Expr<Int>): Formula = and(
       y `in` current(x.inbox),
 
-      next(x.inbox) `==` current(x.inbox) - y,
+      next(x.inbox) eq current(x.inbox) - y,
       set<Node>().without(x).all { stays(it.inbox) },
 
       (y gt x.id)
-        .implies(next(x.outbox) `==` current(x.outbox) + y)
+        .implies(next(x.outbox) eq current(x.outbox) + y)
         .orElse(stays(x.outbox)),
       set<Node>().without(x).all { stays(it.outbox) },
 
-      (y `==` x.id)
-        .implies(next(Node.Companion::Elected) `==` current(Node.Companion::Elected).union(x))
+      (y eq x.id)
+        .implies(next(Node.Companion::Elected) eq current(Node.Companion::Elected).union(x))
         .orElse(stays(Node.Companion::Elected))
     )
   }
