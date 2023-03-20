@@ -16,11 +16,6 @@ kotlin {
     withJava()
   }
 
-  js(IR) {
-    browser()
-    nodejs()
-  }
-
   linuxX64()
   macosX64()
 
@@ -54,8 +49,6 @@ kotlin {
         runtimeOnly(libs.kotest.runnerJUnit5)
       }
     }
-    val jsMain by getting
-    val jsTest by getting
     val linuxX64Main by getting
     val linuxX64Test by getting
     val macosX64Main by getting
