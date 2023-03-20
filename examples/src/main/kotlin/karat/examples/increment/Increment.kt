@@ -27,7 +27,7 @@ public sealed interface CounterAction
 public class INCREMENT: CounterAction {
   public companion object: Transition1<Counter> {
     override fun execute(x: Expr<Counter>): Formula =
-      next(x.value) `==` current(x.value) + 1
+      next(x.value) eq current(x.value) + 1
   }
 }
 
@@ -35,6 +35,6 @@ public class READ: CounterAction {
   // answers are additional arguments
   public companion object: Transition2<Counter, Int> {
     override fun execute(x: Expr<Counter>, y: Expr<Int>): Formula =
-      y `==` x.value
+      y eq x.value
   }
 }
