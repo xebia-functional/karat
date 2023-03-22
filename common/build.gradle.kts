@@ -10,6 +10,7 @@ plugins {
 kotlin {
   explicitApi()
 
+  // set targets
   jvm {
     jvmToolchain(8)
     withJava()
@@ -25,10 +26,15 @@ kotlin {
 
   sourceSets {
     val commonMain by getting
+    val commonTest by getting
     val jvmMain by getting
+    val jvmTest by getting
     val jsMain by getting
+    val jsTest by getting
     val linuxX64Main by getting
+    val linuxX64Test by getting
     val macosX64Main by getting
+    val macosX64Test by getting
   }
 }
 
