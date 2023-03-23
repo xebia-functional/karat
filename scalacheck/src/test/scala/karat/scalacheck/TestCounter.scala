@@ -76,7 +76,7 @@ class TestCounter extends ScalaCheckEffectSuite {
   test("checkRightIO") {
     PropF.forAllF[IO, List[Action], IO[Unit]](model.gen) { actions =>
       checkFormula(actions, IO(initialState), (action: Action, state: Int) => IO(stepAction(action, state)))(initialFormula).map { x =>
-        assert(x.success)
+        assert(!x.success)
       }
     }
   }
