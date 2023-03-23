@@ -4,15 +4,12 @@ import cats.effect.IO
 import karat.concrete.FormulaKt.{always, predicate}
 import karat.concrete.progression.{Info, Step}
 import karat.scalacheck.Scalacheck.{Formula, checkFormula}
-import org.junit.runner.RunWith
-import org.scalacheck.contrib.ScalaCheckJUnitPropertiesRunner
-import org.scalacheck.effect.PropF.forAllF
-import org.scalacheck.{Arbitrary, Gen, Prop, Properties}
+import munit.ScalaCheckEffectSuite
+import org.scalacheck.Prop._
+import org.scalacheck.effect.PropF
+import org.scalacheck.{Arbitrary, Gen, Prop}
 
-@RunWith(classOf[ScalaCheckJUnitPropertiesRunner])
-object TestCounter extends Properties("Sample") {
-
-  import org.scalacheck.Prop.forAll
+class TestCounter extends ScalaCheckEffectSuite {
 
   object Action extends Enumeration {
     type Action = Value
@@ -69,12 +66,19 @@ object TestCounter extends Properties("Sample") {
   val stepAction: (Action, Int) => Option[Step[Int, Int]] = right
   val initialFormula: Formula[Info[Action, Int, Int]] = formula
 
-  property("checkRight") = forAll(model.gen) { actions =>
-    checkFormula(actions, initialState, stepAction)(initialFormula)
+  property("checkRight") {
+    forAll(model.gen) { actions =>
+      val result = checkFormula(actions, initialState, stepAction)(initialFormula)
+      assert(result.success)
+    }
   }
 
-  property("checkRightIO") = forAllF[IO, _, _](model.gen) { actions =>
-    checkFormula[IO, Action, Int, Int](actions, IO(initialState), (action: Action, state: Int) => IO(stepAction(action, state)))(initialFormula)
+  test("checkRightIO") {
+    PropF.forAllF[IO, List[Action], IO[Unit]](model.gen) { actions =>
+      checkFormula(actions, IO(initialState), (action: Action, state: Int) => IO(stepAction(action, state)))(initialFormula).map { x =>
+        assert(x.success)
+      }
+    }
   }
 
   // property("checkWrong") = forAll(model.gen) { actions =>

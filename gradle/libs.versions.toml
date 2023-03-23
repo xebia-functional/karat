@@ -12,6 +12,7 @@ scalacheck = "1.17.0"
 scalacheckContrib = "1.0.4"
 scalacheckEffect = "1.0.4"
 junit = "5.9.2"
+munit = "1.0.0-M7"
 
 [libraries]
 javax-validation = { module = "javax.validation:validation-api", version.ref = "javaxValidation" }
@@ -34,9 +35,12 @@ alloy = { module = "org.alloytools:org.alloytools.alloy.dist", version.ref = "al
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 cats-core = { module = "org.typelevel:cats-core_2.13", version.ref = "cats" }
 cats-effect = { module = "org.typelevel:cats-effect_2.13", version.ref = "catsEffect" }
+munit-core = { module = "org.scalameta:munit_2.13", version.ref = "munit" }
+munit-scalacheck = { module = "org.scalameta:munit-scalacheck_2.13", version.ref = "munit" }
 scalacheck-core = { module = "org.scalacheck:scalacheck_2.13", version.ref = "scalacheck" }
 scalacheck-contrib = { module = "org.devzendo:scalacheck-contrib_2.12", version.ref = "scalacheckContrib" }
 scalacheck-effect = { module = "org.typelevel:scalacheck-effect_2.13", version.ref = "scalacheckEffect" }
+scalacheck-effectMunit = { module = "org.typelevel:scalacheck-effect-munit_2.13", version.ref = "scalacheckEffect" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
