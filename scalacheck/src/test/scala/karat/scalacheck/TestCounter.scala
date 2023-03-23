@@ -6,16 +6,12 @@ import cats.syntax.all._
 import karat.concrete.FormulaKt.{always, predicate}
 import karat.concrete.progression.{Info, Step}
 import karat.scalacheck.Scalacheck.{Formula, checkFormula}
-import org.junit.runner.RunWith
-import org.scalacheck.contrib.ScalaCheckJUnitPropertiesRunner
+import munit.{CatsEffectSuite, ScalaCheckEffectSuite}
+import org.scalacheck.Prop._
 import org.scalacheck.effect.PropF
-import org.scalacheck.effect.PropF.forAllF
-import org.scalacheck.{Arbitrary, Gen, Prop, Properties}
+import org.scalacheck.{Arbitrary, Gen, Prop}
 
-@RunWith(classOf[ScalaCheckJUnitPropertiesRunner])
-object TestCounter extends Properties("Sample") {
-
-  import org.scalacheck.Prop.forAll
+class TestCounter extends CatsEffectSuite with ScalaCheckEffectSuite {
 
   object Action extends Enumeration {
     type Action = Value
@@ -74,30 +70,30 @@ object TestCounter extends Properties("Sample") {
 
   // TODO
   // Maybe this is provided by scalacheck-effect
-  implicit class PropFOps[F[_]](effectProp: F[Prop]) {
+  implicit class PropFOps[F[_]](effectProp: F[Prop.Result]) {
     def toPropF(implicit F: MonadError[F, Throwable]): PropF[F] =
       PropF.effectOfPropFToPropF(
-        effectProp.map { prop =>
-          PropF[F]({ params =>
-            val result = prop(params)
-            PropF.Result(result.status, result.args, result.collected, result.labels)
-          })
+        effectProp.map { result =>
+          PropF.Result(result.status, result.args, result.collected, result.labels)
         }
       )
   }
 
-  property("checkRight") = forAll(model.gen) { actions =>
-    checkFormula(actions, initialState, stepAction)(initialFormula)
+  test("checkRight") {
+    forAll(model.gen) { actions =>
+      val result = checkFormula(actions, initialState, stepAction)(initialFormula)
+      assert(result.success)
+    }
   }
 
-  // TODO property expects a Prop, not a PropF
-  // PropF is expected to be runned as a main or combined with a testing library, like MUnit
-  property("checkRightIO") = forAllF(model.gen) { actions =>
-    checkFormula[IO, Action, Int, Int](
-      actions,
-      IO(initialState),
-      (action: Action, state: Int) => IO(stepAction(action, state))
-    )(initialFormula).toPropF
+  test("checkRightIO") {
+    PropF.forAllF(model.gen) { actions =>
+      checkFormula[IO, Action, Int, Int](
+        actions,
+        IO(initialState),
+        (action: Action, state: Int) => IO(stepAction(action, state))
+      )(initialFormula).toPropF
+    }.check()
   }
 
   // property("checkWrong") = forAll(model.gen) { actions =>

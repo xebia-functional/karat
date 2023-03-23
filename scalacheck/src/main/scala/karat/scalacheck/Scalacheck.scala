@@ -32,7 +32,7 @@ object Scalacheck {
 
   def checkFormula[Action, State, Response](actions: List[Action], initial: State, step: (Action, State) => Option[Step[State, Response]])(
     formula: Formula[Info[Action, State, Response]]
-  ): Prop = {
+  ): Prop.Result = {
     val problem = CheckKt.check[Action, State, Response, Prop.Result, Prop.Result](
       new ScalacheckStepResultManager(),
       formula.asInstanceOf[Formula[Info[_ <: Action, _ <: State, _ <: Response]]],
@@ -41,12 +41,12 @@ object Scalacheck {
       (action, current) => step(action, current).orNull,
       new java.util.ArrayList()
     )
-    if (problem == null) Prop.passed else Prop(problem.getError)
+    noNullResult(problem.getError)
   }
 
   def checkFormula[F[_] : Monad, Action, State, Response](actions: List[Action], initial: F[State], step: (Action, State) => F[Option[Step[State, Response]]])(
     formula: Formula[Info[Action, State, Response]]
-  ): F[Prop] = initial.flatMap(checkFormula(new ScalacheckStepResultManager[Info[Action, State, Response]](), step, actions, _, formula))
+  ): F[Prop.Result] = initial.flatMap(checkFormula(new ScalacheckStepResultManager[Info[Action, State, Response]](), step, actions, _, formula))
 
   def checkFormula[F[_] : Monad, Action, State, Response](
     resultManager: ScalacheckStepResultManager[Info[Action, State, Response]],
@@ -54,24 +54,23 @@ object Scalacheck {
     actions: List[Action],
     current: State,
     formula: Formula[Info[Action, State, Response]]
-  ): F[Prop] = Monad[F].tailRecM((actions, current, formula)) {
+  ): F[Prop.Result] = Monad[F].tailRecM((actions, current, formula)) {
     case (Nil, _, formula) =>
-      resultToProp(resultManager, CheckKt.leftToProve(resultManager, formula)).asRight.pure
+      noNullResult(CheckKt.leftToProve(resultManager, formula)).asRight.pure
     case (action :: rest, current, formula) => step(action, current).flatMap {
         case None =>
-          resultToProp(resultManager, CheckKt.leftToProve(resultManager, formula)).asRight.pure
+          noNullResult(CheckKt.leftToProve(resultManager, formula)).asRight.pure
         case Some(oneStepFurther) =>
           val progress = CheckKt.check(resultManager, formula, new Info(action, current, oneStepFurther.getState, oneStepFurther.getResponse))
           if (!resultManager.isOk(progress.getResult))
-            Prop(progress.getResult).asRight.pure
+            noNullResult(progress.getResult).asRight.pure
           else
             (rest, oneStepFurther.getState, progress.getNext).asLeft.pure
       }
     }
 
-  private def resultToProp[Action, State, Response](
-    resultManager: ScalacheckStepResultManager[Info[Action, State, Response]],
+  private def noNullResult(
     result: Prop.Result
-  ): Prop = if (resultManager.isOk(result)) Prop.passed else Prop(result)
+  ): Prop.Result = if (result == null) Prop.Result(status = Prop.True) else result
 
 }
