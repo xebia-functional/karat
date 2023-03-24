@@ -68,10 +68,6 @@ class TestCounter extends ScalaCheckEffectSuite {
   val stepAction: (Action, Int) => Option[Step[Int, Int]] = right
   val initialFormula: Formula[Info[Action, Int, Int]] = formula
 
-  property("check") {
-    assertEquals(1, 2)
-  }
-
   property("checkRight") {
     forAll(model.gen) { actions =>
       val result = checkFormula(actions, initialState, stepAction)(initialFormula)

@@ -9,7 +9,7 @@ alloy = "6.1.0-SNAPSHOT"
 cats = "2.9.0"
 catsEffect = "3.4.8"
 scalacheck = "1.17.0"
-scalacheckEffect = "1.0.4"
+scalacheckEffect = "2.0.0-M2"
 munit = "1.0.0-M7"
 
 [libraries]
