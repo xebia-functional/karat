@@ -10,7 +10,6 @@ cats = "2.9.0"
 catsEffect = "3.4.8"
 scalacheck = "1.17.0"
 scalacheckEffect = "1.0.4"
-junit = "5.9.2"
 munit = "0.7.9"
 munitCatsEffect = "1.0.7"
 
@@ -32,7 +31,6 @@ ktor-server-contentNegotiation = { module = "io.ktor:ktor-server-content-negotia
 ktor-client-resources = { module = "io.ktor:ktor-client-resources", version.ref = "ktor" }
 ktor-client-contentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 alloy = { module = "org.alloytools:org.alloytools.alloy.dist", version.ref = "alloy" }
-junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 cats-core = { module = "org.typelevel:cats-core_2.13", version.ref = "cats" }
 cats-effect = { module = "org.typelevel:cats-effect_2.13", version.ref = "catsEffect" }
 munit-core = { module = "org.scalameta:munit_2.13", version.ref = "munit" }
