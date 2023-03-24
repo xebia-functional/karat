@@ -11,5 +11,8 @@ dependencies {
   testImplementation(libs.munit.core)
   testImplementation(libs.munit.scalacheck)
   testImplementation(libs.scalacheck.effectMunit)
-  testRuntimeOnly(libs.junit.jupiter)
+}
+
+tasks.withType<Test>().configureEach {
+  useJUnit()
 }

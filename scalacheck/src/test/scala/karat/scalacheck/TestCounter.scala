@@ -4,11 +4,13 @@ import cats.effect.IO
 import karat.concrete.FormulaKt.{always, predicate}
 import karat.concrete.progression.{Info, Step}
 import karat.scalacheck.Scalacheck.{Formula, checkFormula}
-import munit.ScalaCheckEffectSuite
+import munit.{MUnitRunner, ScalaCheckEffectSuite}
+import org.junit.runner.RunWith
 import org.scalacheck.Prop._
 import org.scalacheck.effect.PropF
 import org.scalacheck.{Arbitrary, Gen, Prop}
 
+@RunWith(classOf[MUnitRunner])
 class TestCounter extends ScalaCheckEffectSuite {
 
   object Action extends Enumeration {
@@ -65,6 +67,10 @@ class TestCounter extends ScalaCheckEffectSuite {
   val initialState: Int = 0
   val stepAction: (Action, Int) => Option[Step[Int, Int]] = right
   val initialFormula: Formula[Info[Action, Int, Int]] = formula
+
+  property("check") {
+    assertEquals(1, 2)
+  }
 
   property("checkRight") {
     forAll(model.gen) { actions =>
