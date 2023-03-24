@@ -11,7 +11,7 @@ catsEffect = "3.4.8"
 scalacheck = "1.17.0"
 scalacheckEffect = "1.0.4"
 junit = "5.9.2"
-munit = "1.0.0-M7"
+munit = "0.7.9"
 munitCatsEffect = "1.0.7"
 
 [libraries]
