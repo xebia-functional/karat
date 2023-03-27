@@ -8,10 +8,11 @@ ktor = "2.2.3"
 alloy = "6.1.0-SNAPSHOT"
 cats = "2.9.0"
 catsEffect = "3.4.8"
-scalacheck = "1.17.0"
-scalacheckEffect = "1.0.4"
 munit = "0.7.9"
 munitCatsEffect = "1.0.7"
+scalaMultiversion = "2.0.4"
+scalacheck = "1.17.0"
+scalacheckEffect = "1.0.4"
 
 [libraries]
 javax-validation = { module = "javax.validation:validation-api", version.ref = "javaxValidation" }
@@ -44,3 +45,4 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotest-multiplatform = { id = "io.kotest.multiplatform", version.ref = "kotest" }
+scala-multiversion  = { id = "com.adtran.scala-multiversion-plugin", version.ref = "scalaMultiversion" }
