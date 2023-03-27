@@ -9,7 +9,7 @@ dependencies {
   testImplementation(libs.cats.effect)
   testImplementation(libs.scalacheck.effect)
   testImplementation(libs.munit.core)
-  testImplementation(libs.munit.scalacheck)
+  testImplementation(libs.munit.cats.effect)
   testImplementation(libs.scalacheck.effectMunit)
 }
 

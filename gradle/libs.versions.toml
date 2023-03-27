@@ -9,8 +9,9 @@ alloy = "6.1.0-SNAPSHOT"
 cats = "2.9.0"
 catsEffect = "3.4.8"
 scalacheck = "1.17.0"
-scalacheckEffect = "2.0.0-M2"
-munit = "1.0.0-M7"
+scalacheckEffect = "1.0.4"
+munit = "0.7.9"
+munitCatsEffect = "1.0.7"
 
 [libraries]
 javax-validation = { module = "javax.validation:validation-api", version.ref = "javaxValidation" }
@@ -33,7 +34,7 @@ alloy = { module = "org.alloytools:org.alloytools.alloy.dist", version.ref = "al
 cats-core = { module = "org.typelevel:cats-core_2.13", version.ref = "cats" }
 cats-effect = { module = "org.typelevel:cats-effect_2.13", version.ref = "catsEffect" }
 munit-core = { module = "org.scalameta:munit_2.13", version.ref = "munit" }
-munit-scalacheck = { module = "org.scalameta:munit-scalacheck_2.13", version.ref = "munit" }
+munit-cats-effect = { module = "org.typelevel:munit-cats-effect-3_2.13", version.ref = "munitCatsEffect" }
 scalacheck-core = { module = "org.scalacheck:scalacheck_2.13", version.ref = "scalacheck" }
 scalacheck-effect = { module = "org.typelevel:scalacheck-effect_2.13", version.ref = "scalacheckEffect" }
 scalacheck-effectMunit = { module = "org.typelevel:scalacheck-effect-munit_2.13", version.ref = "scalacheckEffect" }

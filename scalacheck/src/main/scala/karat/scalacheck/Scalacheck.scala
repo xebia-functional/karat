@@ -41,7 +41,7 @@ object Scalacheck {
       (action, current) => step(action, current).orNull,
       new java.util.ArrayList()
     )
-    noNullResult(problem.getError)
+    Option(problem).flatMap(p => Option(p.getError)).getOrElse(Prop.Result(status = Prop.True))
   }
 
   def checkFormula[F[_] : Monad, Action, State, Response](actions: List[Action], initial: F[State], step: (Action, State) => F[Option[Step[State, Response]]])(

@@ -1,17 +1,17 @@
 package karat.scalacheck
 
+import cats.MonadError
 import cats.effect.IO
+import cats.syntax.all._
 import karat.concrete.FormulaKt.{always, predicate}
 import karat.concrete.progression.{Info, Step}
 import karat.scalacheck.Scalacheck.{Formula, checkFormula}
-import munit.{MUnitRunner, ScalaCheckEffectSuite}
-import org.junit.runner.RunWith
+import munit.{CatsEffectSuite, ScalaCheckEffectSuite}
 import org.scalacheck.Prop._
 import org.scalacheck.effect.PropF
 import org.scalacheck.{Arbitrary, Gen, Prop}
 
-@RunWith(classOf[MUnitRunner])
-class TestCounter extends ScalaCheckEffectSuite {
+class TestCounter extends CatsEffectSuite with ScalaCheckEffectSuite {
 
   object Action extends Enumeration {
     type Action = Value
@@ -68,7 +68,18 @@ class TestCounter extends ScalaCheckEffectSuite {
   val stepAction: (Action, Int) => Option[Step[Int, Int]] = right
   val initialFormula: Formula[Info[Action, Int, Int]] = formula
 
-  property("checkRight") {
+  // TODO
+  // Maybe this is provided by scalacheck-effect
+  implicit class PropFOps[F[_]](effectProp: F[Prop.Result]) {
+    def toPropF(implicit F: MonadError[F, Throwable]): PropF[F] =
+      PropF.effectOfPropFToPropF(
+        effectProp.map { result =>
+          PropF.Result(result.status, result.args, result.collected, result.labels)
+        }
+      )
+  }
+
+  test("checkRight") {
     forAll(model.gen) { actions =>
       val result = checkFormula(actions, initialState, stepAction)(initialFormula)
       assert(result.success)
@@ -76,11 +87,13 @@ class TestCounter extends ScalaCheckEffectSuite {
   }
 
   test("checkRightIO") {
-    PropF.forAllF[IO, List[Action], IO[Unit]](model.gen) { actions =>
-      checkFormula(actions, IO(initialState), (action: Action, state: Int) => IO(stepAction(action, state)))(initialFormula).map { x =>
-        assert(x.success)
-      }
-    }
+    PropF.forAllF(model.gen) { actions =>
+      checkFormula[IO, Action, Int, Int](
+        actions,
+        IO(initialState),
+        (action: Action, state: Int) => IO(stepAction(action, state))
+      )(initialFormula).toPropF
+    }.check()
   }
 
   // property("checkWrong") = forAll(model.gen) { actions =>
