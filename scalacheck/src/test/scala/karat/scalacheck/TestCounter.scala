@@ -1,16 +1,17 @@
 package karat.scalacheck
 
+import cats.MonadError
+import cats.effect.IO
+import cats.syntax.all._
 import karat.concrete.FormulaKt.{always, predicate}
 import karat.concrete.progression.{Info, Step}
 import karat.scalacheck.Scalacheck.{Formula, checkFormula}
-import org.junit.runner.RunWith
-import org.scalacheck.contrib.ScalaCheckJUnitPropertiesRunner
-import org.scalacheck.{Arbitrary, Gen, Prop, Properties}
+import munit.{CatsEffectSuite, ScalaCheckEffectSuite}
+import org.scalacheck.Prop._
+import org.scalacheck.effect.PropF
+import org.scalacheck.{Arbitrary, Gen, Prop}
 
-@RunWith(classOf[ScalaCheckJUnitPropertiesRunner])
-object TestCounter extends Properties("Sample") {
-
-  import org.scalacheck.Prop.forAll
+class TestCounter extends CatsEffectSuite with ScalaCheckEffectSuite {
 
   object Action extends Enumeration {
     type Action = Value
@@ -24,19 +25,19 @@ object TestCounter extends Properties("Sample") {
 
   val gen: Gen[Action.Value] = Gen.oneOf(Action.Increment, Action.Read)
 
-  def right(action: Action, state: Int): Step[Int, Int] = action match {
+  def right(action: Action, state: Int): Option[Step[Int, Int]] = Some(action match {
     case Action.Increment => new Step(state + 1, 0)
     case Action.Read => new Step(state, state)
-  }
+  })
 
-  def wrong(action: Action, state: Int): Step[Int, Int] = action match {
+  def wrong(action: Action, state: Int): Option[Step[Int, Int]] = Some(action match {
     case Action.Increment =>
       new Step(state + 1, 0)
     case Action.Read =>
       new Step(state, if (state == 10) -1 else state)
-  }
+  })
 
-  def error(action: Action, state: Int): Step[Int, Int] = action match {
+  def error(action: Action, state: Int): Option[Step[Int, Int]] = Some(action match {
     case Action.Increment => new Step(state + 1, 0)
     case Action.Read =>
       new Step(
@@ -46,7 +47,7 @@ object TestCounter extends Properties("Sample") {
           state + 1
         }
       )
-  }
+  })
 
   def formula: Formula[Info[Action, Int, Int]] =
     always {
@@ -64,11 +65,35 @@ object TestCounter extends Properties("Sample") {
     }
 
   val initialState: Int = 0
-  val stepAction: (Action, Int) => Step[Int, Int] = right
+  val stepAction: (Action, Int) => Option[Step[Int, Int]] = right
   val initialFormula: Formula[Info[Action, Int, Int]] = formula
 
-  property("checkRight") = forAll(model.gen) { actions =>
-    checkFormula(actions, initialState, stepAction)(initialFormula)
+  // TODO
+  // Maybe this is provided by scalacheck-effect
+  implicit class PropFOps[F[_]](effectProp: F[Prop.Result]) {
+    def toPropF(implicit F: MonadError[F, Throwable]): PropF[F] =
+      PropF.effectOfPropFToPropF(
+        effectProp.map { result =>
+          PropF.Result(result.status, result.args, result.collected, result.labels)
+        }
+      )
+  }
+
+  test("checkRight") {
+    forAll(model.gen) { actions =>
+      val result = checkFormula(actions, initialState, stepAction)(initialFormula)
+      assert(result.success)
+    }
+  }
+
+  test("checkRightIO") {
+    PropF.forAllF(model.gen) { actions =>
+      checkFormula[IO, Action, Int, Int](
+        actions,
+        IO(initialState),
+        (action: Action, state: Int) => IO(stepAction(action, state))
+      )(initialFormula).toPropF
+    }.check()
   }
 
   // property("checkWrong") = forAll(model.gen) { actions =>
