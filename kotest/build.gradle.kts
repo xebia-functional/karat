@@ -3,7 +3,7 @@
 plugins {
   id("karat-multiplatform")
   id("karat-publishing")
-  id(libs.plugins.kotlin.multiplatform.get().pluginId)
+  alias(libs.plugins.kotest.multiplatform)
 }
 
 kotlin {
@@ -30,11 +30,5 @@ kotlin {
         runtimeOnly(libs.kotest.runnerJUnit5)
       }
     }
-    val jsMain by getting
-    val jsTest by getting
-    val linuxX64Main by getting
-    val linuxX64Test by getting
-    val macosX64Main by getting
-    val macosX64Test by getting
   }
 }

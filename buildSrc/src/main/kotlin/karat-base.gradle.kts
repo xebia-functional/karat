@@ -15,7 +15,7 @@ tasks.withType<Test>().configureEach {
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_11.majorVersion
+    jvmTarget = JavaVersion.VERSION_1_8.toString()
   }
 }
 

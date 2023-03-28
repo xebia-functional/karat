@@ -39,9 +39,5 @@ kotlin {
         runtimeOnly(libs.kotest.runnerJUnit5)
       }
     }
-    val linuxX64Main by getting
-    val linuxX64Test by getting
-    val macosX64Main by getting
-    val macosX64Test by getting
   }
 }
