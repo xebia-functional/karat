@@ -1,10 +1,9 @@
 @file:Suppress("DSL_SCOPE_VIOLATION")
 
 plugins {
-  alias(libs.plugins.kotlin.multiplatform) apply false
-  alias(libs.plugins.kotlin.jvm) apply false
   alias(libs.plugins.kotlinx.serialization) apply false
   alias(libs.plugins.kotest.multiplatform) apply false
+  alias(libs.plugins.gradle.nexus.publish) apply true
 }
 
 allprojects {
@@ -22,5 +21,15 @@ allprojects {
 
   tasks.withType<ScalaCompile>().configureEach {
     targetCompatibility = ""
+  }
+}
+
+nexusPublishing {
+  repositories {
+    sonatype {
+      username.set(System.getenv("SONATYPE_USER"))
+      password.set(System.getenv("SONATYPE_PWD"))
+      packageGroup.set("com.47deg.karat")
+    }
   }
 }

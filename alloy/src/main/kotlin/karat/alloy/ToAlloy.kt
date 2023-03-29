@@ -450,7 +450,7 @@ public open class AlloyBuilder {
       val t = and(
         initials.map { (_, v) ->
           formulaFromObject("initial", v)
-        } + (currentStateRef `==` ImplDefinedFormula(initialSig)),
+        } + (currentStateRef eq ImplDefinedFormula(initialSig)),
       )
       t
     }
@@ -462,7 +462,7 @@ public open class AlloyBuilder {
       val t = and(
         stutters.map { (_, v) ->
           formulaFromObject("stutter", v)
-        } + (nextStateRef `==` ImplDefinedFormula(stutterSig))
+        } + (nextStateRef eq ImplDefinedFormula(stutterSig))
       )
       t
     }
@@ -497,15 +497,15 @@ public open class AlloyBuilder {
           is Transition1<*> -> KaratSet<Nothing>(transitionArguments[0]).any {
             and(
               companion.execute(it),
-              ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[0])) `==` it
+              ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[0])) eq it
             )
           }
           is Transition2<*, *> -> KaratSet<Nothing>(transitionArguments[0]).any { a ->
             KaratSet<Nothing>(transitionArguments[1]).any { b ->
               and(
                 companion.execute(a, b),
-                ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[0])) `==` a,
-                ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[1])) `==` b
+                ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[0])) eq a,
+                ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[1])) eq b
               )
             }
           }
@@ -514,9 +514,9 @@ public open class AlloyBuilder {
               KaratSet<Nothing>(transitionArguments[2]).any { c ->
                 and(
                   companion.execute(a, b, c),
-                  ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[0])) `==` a,
-                  ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[1])) `==` b,
-                  ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[2])) `==` c
+                  ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[0])) eq a,
+                  ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[1])) eq b,
+                  ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[2])) eq c
                 )
               }
             }
@@ -527,10 +527,10 @@ public open class AlloyBuilder {
                 KaratSet<Nothing>(transitionArguments[3]).any { d ->
                   and(
                     companion.execute(a, b, c, d),
-                    ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[0])) `==` a,
-                    ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[1])) `==` b,
-                    ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[2])) `==` c,
-                    ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[3])) `==` d
+                    ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[0])) eq a,
+                    ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[1])) eq b,
+                    ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[2])) eq c,
+                    ImplDefinedFormula<_, Any?>(stateSig.prime().join(transitionProps[3])) eq d
                   )
                 }
               }

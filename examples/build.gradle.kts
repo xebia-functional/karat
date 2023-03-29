@@ -3,7 +3,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  alias(libs.plugins.kotlin.jvm)
+  id("karat-publishing")
+  id(libs.plugins.kotlin.jvm.get().pluginId)
 }
 
 dependencies {
@@ -11,11 +12,6 @@ dependencies {
   implementation(projects.karatKotest)
   implementation(projects.karatAlloy)
   implementation(kotlin("reflect"))
-}
-
-kotlin {
-  jvmToolchain(8)
-  explicitApi()
 }
 
 tasks.withType<KotlinCompile> {

@@ -1,5 +1,9 @@
+@file:Suppress("DSL_SCOPE_VIOLATION")
+
 plugins {
   scala
+  id("karat-publishing")
+  alias(libs.plugins.scala.multiversion)
 }
 
 dependencies {

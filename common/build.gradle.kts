@@ -1,25 +1,10 @@
-@file:Suppress("DSL_SCOPE_VIOLATION", "UNUSED_VARIABLE")
+@file:Suppress("DSL_SCOPE_VIOLATION")
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  alias(libs.plugins.kotlin.multiplatform)
-}
-
-dependencies {
-
-}
-
-kotlin {
-  explicitApi()
-  jvm {
-    jvmToolchain(8)
-  }
-
-  sourceSets {
-    val commonMain by getting
-    val jvmMain by getting
-  }
+  id("karat-multiplatform")
+  id("karat-publishing")
 }
 
 tasks.withType<KotlinCompile> {

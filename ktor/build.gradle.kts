@@ -1,18 +1,14 @@
 @file:Suppress("DSL_SCOPE_VIOLATION", "UNUSED_VARIABLE")
 
 plugins {
-  alias(libs.plugins.kotlin.multiplatform)
+  id("karat-jvm")
+  id("karat-native")
+  id("karat-publishing")
+  alias(libs.plugins.kotest.multiplatform)
   alias(libs.plugins.kotlinx.serialization)
 }
 
 kotlin {
-  explicitApi()
-
-  // set targets
-  jvm {
-    jvmToolchain(8)
-  }
-
   sourceSets {
     val commonMain by getting {
       dependencies {
