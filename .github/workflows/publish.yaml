@@ -14,7 +14,7 @@ env:
   SIGNING_KEY_PASSPHRASE: '${{ secrets.ORG_GRADLE_PROJECT_SIGNINGPASSWORD }}'
 
 jobs:
-  build:
+  release:
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -32,6 +32,9 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: 11
+
+      - name: Setup GPG
+        uses: olafurpg/setup-gpg@v3
 
       - name: Build
         uses: gradle/gradle-build-action@v2
