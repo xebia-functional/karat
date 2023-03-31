@@ -25,7 +25,7 @@ public fun <A> current(x: Expr<A>): Expr<A> = x
 public fun <A> current(prop: KProperty0<A>): Expr<A> = current(field(prop))
 public fun <A> next(x: Expr<A>): Expr<A> = Next(x)
 public fun <A> next(prop: KProperty0<A>): Expr<A> = next(field(prop))
-public fun <A> stays(e: Expr<A>): Formula = next(e) `==` current(e)
+public fun <A> stays(e: Expr<A>): Formula = next(e) eq current(e)
 public inline fun <reified A> stays(): Formula = stays(set<A>())
 public fun <A> stays(prop: KProperty0<A>): Formula = stays(field(prop))
 public inline fun <reified A, F> stays(prop: KProperty1<A, F>): Formula = stays(field(prop))

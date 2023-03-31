@@ -11,11 +11,11 @@ public inline fun <reified A, B> field(property: KProperty1<A, B>): Relation<A, 
 public fun <A> field(property: KProperty0<A>): Expr<A> =
   GlobalField(property)
 
-public infix fun <A> Expr<A>.`==`(other: Expr<A>): Formula =
+public infix fun <A> Expr<A>.eq(other: Expr<A>): Formula =
   Equals(this, other)
 public infix fun <A> Expr<A>.`in`(other: Expr<A>): Formula =
   In(this, other)
-public infix fun <A> Expr<A>.`!=`(other: Expr<A>): Formula =
+public infix fun <A> Expr<A>.neq(other: Expr<A>): Formula =
   Not(Equals(this, other))
 
 public operator fun <A, B> Expr<A>.div(r: Relation<A, B>): Expr<B> =
