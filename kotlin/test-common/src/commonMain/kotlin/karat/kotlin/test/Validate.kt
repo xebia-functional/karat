@@ -1,11 +1,15 @@
 package karat.kotlin.test
 
 import karat.concrete.*
+import karat.concrete.progression.Info
 import karat.concrete.progression.suspend.SuspendStepResultManager
 import kotlin.test.assertTrue
 
 public typealias KotlinTestAtomic<A> = Atomic<A, Unit>
 public typealias KotlinTestFormula<A> = Formula<A, Unit>
+
+public typealias KotlinTestFormulaBuilder<ConcreteState, Action, Response> =
+  ConcreteFormulaBuilder<Info<Action, ConcreteState, Response>, Unit>
 
 public class KotlinTestStepResultManager<A>: SuspendStepResultManager<A, Unit, List<AssertionError>?> {
   override val List<AssertionError>?.isOk: Boolean

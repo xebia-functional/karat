@@ -12,7 +12,7 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.testing.*
 import karat.kotest.ktor.*
 import karat.kotest.StatelessArbModel
-import karat.kotest.should
+import karat.kotlin.test.should
 
 inline fun <reified R : Any> performTest(
   model: StatelessArbModel<RequestInfo<R>>,

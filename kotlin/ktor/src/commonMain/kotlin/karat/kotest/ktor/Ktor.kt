@@ -11,16 +11,16 @@ import io.ktor.http.HttpMethod
 import io.ktor.resources.*
 import karat.concrete.progression.Info
 import karat.concrete.progression.Step
-import karat.kotest.KotestFormula
 import karat.kotest.ArbModel
 import karat.kotest.checkAgainst
-import karat.kotest.KotestFormulaBuilder
+import karat.kotlin.test.KotlinTestFormula
+import karat.kotlin.test.KotlinTestFormulaBuilder
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 
 
-public typealias HttpFormula<R> = KotestFormula<Info<RequestInfo<R>, HttpClient, HttpResponse>>
-public typealias HttpFormulaBuilder<R> = KotestFormulaBuilder<HttpClient, RequestInfo<R>, HttpResponse>
+public typealias HttpFormula<R> = KotlinTestFormula<Info<RequestInfo<R>, HttpClient, HttpResponse>>
+public typealias HttpFormulaBuilder<R> = KotlinTestFormulaBuilder<HttpClient, RequestInfo<R>, HttpResponse>
 
 public data class RequestInfo<out R>(
   val method: HttpMethod,
@@ -50,7 +50,7 @@ public suspend inline fun <State, reified R: Any> HttpClient.checkAgainst(
   model: ArbModel<State, RequestInfo<R>>,
   range: IntRange = 1 .. 100,
   noinline formula: HttpFormulaBuilder<R>.() -> HttpFormula<R>
-): Unit = checkAgainst<State, HttpClient, RequestInfo<R>, HttpResponse>(
+): Unit = checkAgainst(
   model, this, { req: RequestInfo<R>, client: HttpClient -> Step(client, client.performRequest(req)) }, range, formula
 )
 

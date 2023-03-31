@@ -15,9 +15,6 @@ import karat.kotlin.test.KotlinTestFormula
 import karat.kotlin.test.KotlinTestStepResultManager
 import karat.kotlin.test.TraceAssertionError
 
-public typealias KotestFormulaBuilder<ConcreteState, Action, Response> =
-  ConcreteFormulaBuilder<Info<Action, ConcreteState, Response>, Unit>
-
 public interface ArbModel<State, Action> {
   public val initial: State
   public fun nexts(state: State): Arb<Action?>
