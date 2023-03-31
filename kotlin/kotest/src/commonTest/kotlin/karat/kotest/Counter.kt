@@ -9,6 +9,7 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.enum
 import karat.concrete.progression.Info
 import karat.concrete.progression.Step
+import karat.kotlin.test.should
 
 enum class Action {
   INCREMENT, READ
