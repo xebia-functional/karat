@@ -10,6 +10,10 @@ import karat.concrete.trace
 import karat.concrete.progression.Info
 import karat.concrete.progression.Step
 import karat.concrete.progression.suspend.check
+import karat.kotlin.test.KotlinTestAtomic
+import karat.kotlin.test.KotlinTestFormula
+import karat.kotlin.test.KotlinTestStepResultManager
+import karat.kotlin.test.TraceAssertionError
 
 public typealias KotestFormulaBuilder<ConcreteState, Action, Response> =
   ConcreteFormulaBuilder<Info<Action, ConcreteState, Response>, Unit>
@@ -59,11 +63,11 @@ public suspend fun <AbstractState, ConcreteState, Action, Response> checkAgainst
   initial: ConcreteState,
   step: suspend (Action, ConcreteState) -> Step<ConcreteState, Response>?,
   range: IntRange = 1 .. 100,
-  formula: KotestFormula<Info<Action, ConcreteState, Response>>
+  formula: KotlinTestFormula<Info<Action, ConcreteState, Response>>
 ) {
   checkAll(model.gen(range)) { actions ->
     val problem =
-      KotestStepResultManager<Info<Action, ConcreteState, Response>>().check(formula, actions, initial, step)
+      KotlinTestStepResultManager<Info<Action, ConcreteState, Response>>().check(formula, actions, initial, step)
     if (problem != null) throw TraceAssertionError(problem.actions, problem.state, problem.error!!)
   }
 }
@@ -73,7 +77,7 @@ public suspend fun <AbstractState, ConcreteState, Action, Response> checkAgainst
   initial: ConcreteState,
   step: suspend (Action, ConcreteState) -> Step<ConcreteState, Response>?,
   range: IntRange = 1 .. 100,
-  formula: ConcreteFormulaBuilder<Info<Action, ConcreteState, Response>, Unit>.() -> KotestFormula<Info<Action, ConcreteState, Response>>
+  formula: ConcreteFormulaBuilder<Info<Action, ConcreteState, Response>, Unit>.() -> KotlinTestFormula<Info<Action, ConcreteState, Response>>
 ): Unit =
   ConcreteFormulaBuilder<Info<Action, ConcreteState, Response>, Unit>()
     .run(formula)
@@ -87,14 +91,14 @@ public suspend fun <AbstractState, ConcreteState, Action, Response> checkTraceAg
   formula: suspend TraceFormulaBuilder<
       Info<Action, ConcreteState, Response>,
       suspend (Info<Action, ConcreteState, Response>) -> Unit,
-      KotestFormula<Info<Action, ConcreteState, Response>>,
-      KotestAtomic<Info<Action, ConcreteState, Response>>
+      KotlinTestFormula<Info<Action, ConcreteState, Response>>,
+      KotlinTestAtomic<Info<Action, ConcreteState, Response>>
     >.() -> Unit
 ) {
   checkAll(model.gen(range)) { actions ->
     val translated = trace(formula)
     val problem =
-      KotestStepResultManager<Info<Action, ConcreteState, Response>>().check(translated, actions, initial, step)
+      KotlinTestStepResultManager<Info<Action, ConcreteState, Response>>().check(translated, actions, initial, step)
     if (problem != null) throw TraceAssertionError(problem.actions, problem.state, problem.error!!)
   }
 }

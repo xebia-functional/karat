@@ -17,19 +17,11 @@ kotlin {
     val commonMain by getting {
       dependencies {
         api(projects.karatCommon)
-        implementation(libs.kotest.frameworkEngine)
-        implementation(libs.kotest.assertionsCore)
-        implementation(libs.kotest.property)
-        // implementation(libs.kotlinx.coroutines)
+        api(projects.karatKotlinTestCommon)
+        api(libs.turbine)
       }
     }
-    val commonTest by getting {
-      dependencies {
-        implementation(projects.karatCommon)
-        implementation(libs.kotest.frameworkEngine)
-        implementation(libs.kotest.assertionsCore)
-      }
-    }
+    val commonTest by getting
     val jvmMain by getting
     val jvmTest by getting {
       dependencies {
