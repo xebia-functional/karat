@@ -14,7 +14,14 @@ kotlin {
         api(libs.turbine)
       }
     }
-    val commonTest by getting
+    val commonTest by getting {
+      dependencies {
+        implementation(libs.turbine)
+        implementation(libs.kotlinx.coroutines)
+        implementation(libs.kotest.frameworkEngine)
+        implementation(libs.kotest.assertionsCore)
+      }
+    }
     val jvmMain by getting
     val jvmTest by getting {
       dependencies {

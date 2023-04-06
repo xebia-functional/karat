@@ -3,18 +3,18 @@ package karat.turbine
 import app.cash.turbine.Event
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
-import karat.concrete.Atomic
-import karat.concrete.Formula
 import karat.concrete.progression.suspend.SuspendStepResultManager
 import karat.concrete.progression.suspend.check
 import karat.concrete.progression.suspend.leftToProve
+import karat.kotlin.test.KotlinTestAtomic
+import karat.kotlin.test.KotlinTestFormula
 import karat.kotlin.test.KotlinTestStepResultManager
 import karat.kotlin.test.StateAssertionError
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
 
-public typealias TurbineAtomic<A> = Atomic<Result<A>, Unit>
-public typealias TurbineFormula<A> = Formula<Result<A>, Unit>
+public typealias TurbineAtomic<A> = KotlinTestAtomic<Result<A>>
+public typealias TurbineFormula<A> = KotlinTestFormula<Result<A>>
 
 /**
  * Checks that the formula holds over the [Flow].
@@ -40,7 +40,7 @@ public suspend fun <A> ReceiveTurbine<A>.formula(block: () -> TurbineFormula<A>)
 private class TurbineStepResultManager<A>(
   val turbine: ReceiveTurbine<A>,
   val manager: KotlinTestStepResultManager<Result<A>>
-): ReceiveTurbine<A> by turbine, SuspendStepResultManager<Result<A>, Unit, List<AssertionError>?> by manager
+): ReceiveTurbine<A> by turbine, SuspendStepResultManager<Result<A>, Any?, List<AssertionError>?> by manager
 
 public suspend fun <A> ReceiveTurbine<A>.formula(
   formula: TurbineFormula<A>
