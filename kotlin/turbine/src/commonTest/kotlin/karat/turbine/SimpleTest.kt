@@ -54,7 +54,7 @@ class SimpleTest: StringSpec({
   fun Flow<Int>.shakeIt(): Flow<Int> = flatMapConcat {
     flow {
       emit(it)
-      if (it % 5 == 0) emit(it)
+      if (it % 5 == 0) emit(it - 10)
     }
   }
 
