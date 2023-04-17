@@ -13,7 +13,7 @@ allprojects {
   }
 
   group = "com.47deg.karat"
-  version = "0.1-SNAPSHOT"
+  version = "0.1.0-SNAPSHOT"
 
   tasks.withType<Test>().configureEach {
     useJUnitPlatform()
