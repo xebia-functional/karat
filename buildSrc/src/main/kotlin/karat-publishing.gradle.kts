@@ -17,11 +17,13 @@ configurePublish()
 val publications: PublicationContainer = extensions.getByName<PublishingExtension>("publishing").publications
 
 signing {
+  val isLocal = gradle.startParameter.taskNames.any { it.contains("publishToMavenLocal", ignoreCase = true) }
+  isRequired = !isLocal
   useGpgCmd()
   useInMemoryPgpKeys(signingKeyId, signingKey, signingPassphrase)
   sign(publications)
 }
 
-tasks.withType<AbstractPublishToMaven>() {
+tasks.withType<AbstractPublishToMaven> {
   dependsOn(tasks.withType<Sign>())
 }
