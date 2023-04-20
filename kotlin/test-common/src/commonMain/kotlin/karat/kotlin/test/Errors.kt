@@ -3,7 +3,10 @@ package karat.kotlin.test
 public open class StateAssertionError(
   public val state: Any?,
   public val problems: List<AssertionError>
-): AssertionError()
+): AssertionError() {
+  override fun toString(): String =
+    "StateAssertionError on $state" + problems.joinToString(prefix = "\n- ", separator = "\n- ")
+}
 
 public class TraceAssertionError(
   public val trace: List<*>,
