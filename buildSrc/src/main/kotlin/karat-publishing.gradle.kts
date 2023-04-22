@@ -10,6 +10,7 @@ import org.gradle.kotlin.dsl.signing
 plugins {
   signing
   `maven-publish`
+  id("com.javiersc.semver")
 }
 
 configurePublish()

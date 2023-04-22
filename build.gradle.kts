@@ -3,7 +3,7 @@
 plugins {
   alias(libs.plugins.kotlinx.serialization) apply false
   alias(libs.plugins.kotest.multiplatform) apply false
-  alias(libs.plugins.gradle.nexus.publish) apply true
+  alias(libs.plugins.gradle.nexus.publish)
 }
 
 allprojects {
@@ -13,7 +13,6 @@ allprojects {
   }
 
   group = "com.47deg.karat"
-  version = "0.1.0-SNAPSHOT"
 
   tasks.withType<Test>().configureEach {
     useJUnitPlatform()
