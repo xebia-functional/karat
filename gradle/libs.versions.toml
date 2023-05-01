@@ -1,10 +1,10 @@
 [versions]
-kotlin = "1.8.10"
+kotlin = "1.8.21"
 javaxValidation = "2.0.1.Final"
-coroutines = "1.6.4"
-kotest = "5.5.4"
-serialization = "1.5.0-RC"
-ktor = "2.2.3"
+coroutines = "1.7.0-RC"
+kotest = "5.5.5"
+serialization = "1.5.0"
+ktor = "2.3.0"
 alloy = "6.1.0-SNAPSHOT"
 cats = "2.9.0"
 catsEffect = "3.4.8"
@@ -38,13 +38,13 @@ ktor-server-contentNegotiation = { module = "io.ktor:ktor-server-content-negotia
 ktor-client-resources = { module = "io.ktor:ktor-client-resources", version.ref = "ktor" }
 ktor-client-contentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 alloy = { module = "org.alloytools:org.alloytools.alloy.dist", version.ref = "alloy" }
-cats-core = { module = "org.typelevel:cats-core_2.13", version.ref = "cats" }
-cats-effect = { module = "org.typelevel:cats-effect_2.13", version.ref = "catsEffect" }
-munit-core = { module = "org.scalameta:munit_2.13", version.ref = "munit" }
-munit-cats-effect = { module = "org.typelevel:munit-cats-effect-3_2.13", version.ref = "munitCatsEffect" }
-scalacheck-core = { module = "org.scalacheck:scalacheck_2.13", version.ref = "scalacheck" }
-scalacheck-effect = { module = "org.typelevel:scalacheck-effect_2.13", version.ref = "scalacheckEffect" }
-scalacheck-effectMunit = { module = "org.typelevel:scalacheck-effect-munit_2.13", version.ref = "scalacheckEffect" }
+cats-core = { module = "org.typelevel:cats-core_%%", version.ref = "cats" }
+cats-effect = { module = "org.typelevel:cats-effect_%%", version.ref = "catsEffect" }
+munit-core = { module = "org.scalameta:munit_%%", version.ref = "munit" }
+munit-cats-effect = { module = "org.typelevel:munit-cats-effect-3_%%", version.ref = "munitCatsEffect" }
+scalacheck-core = { module = "org.scalacheck:scalacheck_%%", version.ref = "scalacheck" }
+scalacheck-effect = { module = "org.typelevel:scalacheck-effect_%%", version.ref = "scalacheckEffect" }
+scalacheck-effectMunit = { module = "org.typelevel:scalacheck-effect-munit_%%", version.ref = "scalacheckEffect" }
 semver-gradlePlugin = { module = "com.javiersc.semver:semver-gradle-plugin", version.ref = "semverPlugin" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
