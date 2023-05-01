@@ -8,5 +8,6 @@ repositories {
 }
 
 dependencies {
+  api(libs.semver.gradlePlugin)
   implementation(libs.kotlin.gradle.plugin)
 }

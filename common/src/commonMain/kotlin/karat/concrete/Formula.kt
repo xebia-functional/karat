@@ -96,6 +96,10 @@ public fun <A, R> predicate(
   test: (A) -> R
 ): Predicate<A, R> = NonSuspendedPredicate(test)
 
+public fun <A, R> remember(
+  block: (A) -> Formula<A, R>
+): Remember<A, R> = Remember(block)
+
 public data class Not<in A, out R>(
   val formula: Atomic<A, R>
 ): Formula<A, R>

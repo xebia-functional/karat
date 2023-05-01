@@ -74,9 +74,9 @@ public suspend fun <AbstractState, ConcreteState, Action, Response> checkAgainst
   initial: ConcreteState,
   step: suspend (Action, ConcreteState) -> Step<ConcreteState, Response>?,
   range: IntRange = 1 .. 100,
-  formula: ConcreteFormulaBuilder<Info<Action, ConcreteState, Response>, Unit>.() -> KotlinTestFormula<Info<Action, ConcreteState, Response>>
+  formula: ConcreteFormulaBuilder<Info<Action, ConcreteState, Response>, Any?>.() -> KotlinTestFormula<Info<Action, ConcreteState, Response>>
 ): Unit =
-  ConcreteFormulaBuilder<Info<Action, ConcreteState, Response>, Unit>()
+  ConcreteFormulaBuilder<Info<Action, ConcreteState, Response>, Any?>()
     .run(formula)
     .let { checkAgainst(model, initial, step, range, it) }
 
@@ -87,7 +87,7 @@ public suspend fun <AbstractState, ConcreteState, Action, Response> checkTraceAg
   range: IntRange = 1 .. 100,
   formula: suspend TraceFormulaBuilder<
       Info<Action, ConcreteState, Response>,
-      suspend (Info<Action, ConcreteState, Response>) -> Unit,
+      suspend (Info<Action, ConcreteState, Response>) -> Any?,
       KotlinTestFormula<Info<Action, ConcreteState, Response>>,
       KotlinTestAtomic<Info<Action, ConcreteState, Response>>
     >.() -> Unit

@@ -1,10 +1,11 @@
-name: Publish artifacts for final versions
+name: Publish artifacts for non-final versions
 
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
-  workflow_dispatch:    
+      - '[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
 
 env:
   GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=false -Dorg.gradle.jvmargs="-Xmx5g -XX:+UseParallelGC -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
