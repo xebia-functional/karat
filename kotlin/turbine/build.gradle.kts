@@ -2,6 +2,7 @@
 
 plugins {
   id("karat-multiplatform")
+  id("karat-publishing")
   alias(libs.plugins.kotest.multiplatform)
 }
 
