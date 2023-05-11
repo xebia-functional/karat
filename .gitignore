@@ -142,3 +142,4 @@ _site/
 .jekyll-cache/
 .jekyll-metadata
 
+gnupg-*
