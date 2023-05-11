@@ -37,6 +37,11 @@ jobs:
       - name: Setup GPG
         uses: olafurpg/setup-gpg@v3
 
+      - name: Git Status
+        run: |
+          git --version
+          git status
+
       - name: Build
         uses: gradle/gradle-build-action@v2
         with:
