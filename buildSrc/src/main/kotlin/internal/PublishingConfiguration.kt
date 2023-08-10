@@ -24,7 +24,7 @@ internal fun Project.configurePublish() {
           artifacts = listOf(docsJar),
         )
 
-      isKotlinJvm || isScala ->
+      isKotlinJvm ->
         configurePublishingExtension(
           artifacts = listOf(docsJar, sourcesJar),
           components = listOf("java"),

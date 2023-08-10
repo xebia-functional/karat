@@ -11,9 +11,6 @@ internal val Project.isKotlinJvm: Boolean
 internal val Project.isKotlinMultiplatform: Boolean
   get() = pluginManager.hasPlugin("org.jetbrains.kotlin.multiplatform")
 
-internal val Project.isScala: Boolean
-  get() = pluginManager.hasPlugin("org.gradle.scala")
-
 internal fun Project.getVariable(propertyName: String, environmentVariableName: String): String? {
   val property: String? = project.properties[propertyName]?.toString()
   val environmentVariable: String? = System.getenv(environmentVariableName)

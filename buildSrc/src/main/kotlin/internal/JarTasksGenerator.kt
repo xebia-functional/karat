@@ -36,9 +36,6 @@ internal val Project.sourcesJar: Jar
           isKotlinJvm -> {
             (project.properties["sourceSets"] as SourceSetContainer)["main"].allSource
           }
-          isScala -> {
-            (project.properties["sourceSets"] as SourceSetContainer)["main"].allSource
-          }
           else -> emptySet()
         }
       if (sources.toList().isNotEmpty()) from(sources)
