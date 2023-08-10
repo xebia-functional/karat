@@ -12,7 +12,7 @@ allprojects {
     maven(url = "https://oss.sonatype.org/content/repositories/snapshots/")
   }
 
-  group = "com.47deg.karat"
+  group = "com.xebia.karat"
 
   tasks.withType<Test>().configureEach {
     useJUnitPlatform()
@@ -24,7 +24,7 @@ nexusPublishing {
     sonatype {
       username.set(System.getenv("SONATYPE_USER"))
       password.set(System.getenv("SONATYPE_PWD"))
-      packageGroup.set("com.47deg.karat")
+      packageGroup.set("com.xebia.karat")
     }
   }
 }
