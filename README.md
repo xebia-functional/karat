@@ -7,7 +7,7 @@ From a single specification you can pursue two different avenues:
 
 - Check the implementation against the model,
   - Using our [integration with Kotest](https://github.com/xebia-functional/karat/tree/main/kotest) if you use Kotlin,
-  - Or with our [integration with Scalacheck](https://github.com/47degrees/karat/tree/main/scalacheck) if you use Scala;
+  - Or with our [integration with Scalacheck](https://github.com/xebia-functional/karat-scalacheck) if you use Scala;
 - Verify properties of the model using our [integration with Alloy](https://github.com/xebia-functional/karat/tree/main/alloy).
 
 ## References

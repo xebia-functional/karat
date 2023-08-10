@@ -17,10 +17,6 @@ allprojects {
   tasks.withType<Test>().configureEach {
     useJUnitPlatform()
   }
-
-  tasks.withType<ScalaCompile>().configureEach {
-    targetCompatibility = ""
-  }
 }
 
 nexusPublishing {

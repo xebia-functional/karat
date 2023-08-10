@@ -20,8 +20,5 @@ project(":karat-kotest-ktor").projectDir = file("kotlin/ktor")
 include("karat-turbine")
 project(":karat-turbine").projectDir = file("kotlin/turbine")
 
-include("karat-scalacheck")
-project(":karat-scalacheck").projectDir = file("scalacheck")
-
 include("karat-examples")
 project(":karat-examples").projectDir = file("examples")
